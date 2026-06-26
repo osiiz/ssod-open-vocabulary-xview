@@ -1,0 +1,7 @@
+[core]
+    remote = myremote
+    autostage = true
+[cache]
+    type = "hardlink,symlink"
+['remote "myremote"']
+    url = /dvcstore/tfg_lois_ssod-vocabulario-aberto

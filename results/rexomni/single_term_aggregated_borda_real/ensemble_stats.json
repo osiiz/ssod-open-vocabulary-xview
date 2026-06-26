@@ -1,0 +1,11 @@
+{
+  "model": "rex",
+  "raw_detections": 485077,
+  "merged_clusters": 245563,
+  "images_with_detections": 5974,
+  "cluster_size_mean": 1.9619,
+  "cluster_size_max": 806,
+  "singletons": 135515,
+  "loc_uncertainty_mean": 0.2845,
+  "class_uncertainty_mean": 0.0249
+}

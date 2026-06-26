@@ -1,0 +1,68 @@
+version: 1
+language: en
+prompt_groups:
+  - name: aircraft_and_maritime
+    phrases:
+      - fixed-wing aircraft
+      - small aircraft
+      - passenger plane
+      - cargo plane
+      - helicopter
+      - maritime vessel
+      - motorboat
+      - sailboat
+      - tugboat
+      - barge
+      - fishing vessel
+      - ferry
+      - yacht
+      - container ship
+      - oil tanker
+
+  - name: land_vehicles
+    phrases:
+      - passenger vehicle
+      - small car
+      - pickup truck
+      - utility truck
+      - bus
+      - truck
+      - cargo truck
+      - truck tractor with box trailer
+      - truck tractor
+      - trailer
+      - truck tractor with flatbed trailer
+      - truck tractor with liquid tank
+      - crane truck
+      - railway vehicle
+      - passenger train car
+      - cargo train car
+      - container train car
+      - flat train car
+      - tank train car
+      - locomotive
+
+  - name: engineering_and_structures
+    phrases:
+      - engineering vehicle
+      - reach stacker
+      - straddle carrier
+      - dump truck
+      - haul truck
+      - scraper
+      - tractor
+      - front loader
+      - bulldozer
+      - excavator
+      - cement mixer
+      - ground grader
+      - hut
+      - tent
+      - shed
+      - building
+      - aircraft hangar
+      - damaged building
+      - facility
+      - storage tank
+      - pylon
+      - tower

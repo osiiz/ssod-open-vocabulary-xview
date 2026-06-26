@@ -1,0 +1,165 @@
+model:
+  config_file: "configs/models/fasterrcnn_pretrained.py"
+
+inference:
+  num_imgs: 100
+  score_thresh: 0.5
+  device_name: "cuda"
+  batch_size: 2
+  num_workers: 4
+
+xview:
+  extracted_data_path: "xView"
+
+preprocessing:
+  tile_width: 700
+  tile_height: 700
+  min_tile_width: 300
+  min_tile_height: 300
+  min_visibility: 0.3
+  erroneous_type_ids: "75 82"
+  missing_image_ids: "1395.tif"
+  split_ratios: "0.7 0.1 0.2"
+  train_sample_ratio: 0.10
+  unlabeled_sample_ratio: 0.90
+  unlabeled_tag: "r90"
+  split_seed: 1773160924
+  sample_seed: 1623175845
+  sample_iters: 3000
+  sample_nested_ratios: "0.10"
+
+# Curva supervisada (cota inferior do estudo): 10 % (= ssod_baseline), 20 % e 30 %
+# anidados (10 % ⊂ 20 % ⊂ 30 %), para xustificar a escolla do 10 % como subconxunto etiquetado.
+supervised_curve:
+  ratios: "0.10,0.20,0.30"
+
+dino:
+  model_id: "IDEA-Research/grounding-dino-base"
+  prompt_file: "./configs/prompts/dino_prompts.yaml"
+  detection_label_key: "dino_label"
+  device: "cuda"
+  batch_size: 4
+  use_amp: true
+  save_raw_predictions: false
+  score_thresh: 0.08
+  text_thresh: 0.08
+  max_dets: 1000
+  artifact_mode: "auto"
+  output_root: "./results/dino"
+  charts_output_dir: "./docs/charts_dino"
+
+rexomni:
+  model_id: "IDEA-Research/Rex-Omni"
+  prompt_file: "./configs/prompts/rex_omni_prompts.yaml"
+  detection_label_key: "rex_label"
+  device: "cuda"
+  batch_size: 4
+  backend: "transformers"
+  max_categories: 15
+  attn_implementation: "eager"
+  torch_dtype: "float16"
+  device_map: "auto"
+  max_tokens: 2048
+  temperature: 0.0
+  top_p: 0.05
+  top_k: 1
+  repetition_penalty: 1.05
+  debug_raw_output: 0
+  fail_fast_threshold: 0.0
+  use_amp: true
+  save_raw_predictions: false
+  score_thresh: 0.08
+  text_thresh: 0.08
+  max_dets: 1000
+  artifact_mode: "auto"
+  output_root: "./results/rexomni"
+  charts_output_dir: "./docs/charts_rexomni"
+
+training:
+  model_config: "configs/models/fasterrcnn_pretrained.py"
+  num_classes: 10
+  seed: 42
+  num_epochs: 100
+  batch_size: 2
+  learning_rate: 0.01
+  num_workers: 8
+  accumulation_steps: 8
+  lr_milestones: "50 85"
+  lr_gamma: 0.1
+  warmup_epochs: 1
+  focal_loss: 0
+  train_empty_fraction: 0.0
+  device: "cuda"
+  save_every: 1
+  eval_every: 2
+  keep_last_n: 5
+  log_every_train: 1000
+  log_every_eval: 200
+
+training_ssod_baseline:
+  num_epochs: 100
+  learning_rate: 0.01
+  lr_milestones: "50 85"
+  lr_gamma: 0.1
+  warmup_epochs: 1
+  focal_loss: 0
+  train_empty_fraction: 0.0
+  multires_min_visibility: 0.0
+  save_every: 1
+  eval_every: 2
+  keep_last_n: 5
+  log_every_train: 100
+  log_every_eval: 200
+
+evaluation:
+  model_checkpoint: "./results/models/base/fasterrcnn_best.pth"
+  batch_size: 4
+
+generate_charts:
+  score_thresh: 0.3
+  iou_thresh: 0.3
+
+dino_ensemble:
+  score_thresh: 0.05
+  text_thresh: 0.25
+  batch_size: 8
+  max_tokens: 240
+  iou_thresh: 0.5
+
+# Inferencia e agregación single-term (Grounding DINO)
+dino_single_term:
+  score_thresh: 0.05
+  batch_size: 8
+  iou_thresh: 0.7   # IoU do clustering union-find na agregación multi-prompt
+
+# Inferencia e agregación single-term (Rex-Omni)
+rex_single_term:
+  batch_size: 4
+  iou_thresh: 0.7   # IoU do clustering union-find na agregación multi-prompt
+
+# Política de filtrado de Faster (FT): rescate per-clase + zonas de exclusión
+pe_policy_ft:
+  tau: 0.7                  # limiar global de score
+  min_n: 300                # piso de PE por clase (rescate)
+  exclusion_low_thresh: 0.05  # límite inferior das zonas de exclusión [thresh, tau_eff)
+
+ssod:
+  faster10_inference_score_thresh: 0.001
+  threshold_sweep_start: 0.1
+  threshold_sweep_stop: 0.9
+  threshold_sweep_step: 0.1
+  pe_dataset_drop_empty_unlabeled: true
+
+training_ssod_pe:
+  num_epochs: 100
+  learning_rate: 0.01
+  lr_milestones: "50 85"
+  lr_gamma: 0.1
+  warmup_epochs: 1
+  focal_loss: 0
+  train_empty_fraction: 0.0
+  save_every: 1
+  eval_every: 2
+  keep_last_n: 5
+  log_every_train: 100
+  log_every_eval: 200

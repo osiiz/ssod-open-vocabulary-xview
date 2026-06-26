@@ -1,0 +1,95 @@
+{
+    "mean_deviation_pct": 0.368,
+    "class_distribution": [
+        {
+            "clase": "Building",
+            "total_obj": 326599,
+            "train_pct": 69.91,
+            "val_pct": 10.07,
+            "test_pct": 20.02,
+            "dev_train": 0.09,
+            "dev_val": 0.07,
+            "dev_test": 0.02
+        },
+        {
+            "clase": "Light Vehicle",
+            "total_obj": 216510,
+            "train_pct": 70.3,
+            "val_pct": 9.77,
+            "test_pct": 19.93,
+            "dev_train": 0.3,
+            "dev_val": 0.23,
+            "dev_test": 0.07
+        },
+        {
+            "clase": "Heavy Vehicle",
+            "total_obj": 34752,
+            "train_pct": 70.08,
+            "val_pct": 9.88,
+            "test_pct": 20.04,
+            "dev_train": 0.08,
+            "dev_val": 0.12,
+            "dev_test": 0.04
+        },
+        {
+            "clase": "Maritime Vessel",
+            "total_obj": 5211,
+            "train_pct": 69.68,
+            "val_pct": 10.04,
+            "test_pct": 20.28,
+            "dev_train": 0.32,
+            "dev_val": 0.04,
+            "dev_test": 0.28
+        },
+        {
+            "clase": "Engineering Vehicle",
+            "total_obj": 3987,
+            "train_pct": 70.38,
+            "val_pct": 9.26,
+            "test_pct": 20.37,
+            "dev_train": 0.38,
+            "dev_val": 0.74,
+            "dev_test": 0.37
+        },
+        {
+            "clase": "Railway Vehicle",
+            "total_obj": 3900,
+            "train_pct": 68.9,
+            "val_pct": 11.23,
+            "test_pct": 19.87,
+            "dev_train": 1.1,
+            "dev_val": 1.23,
+            "dev_test": 0.13
+        },
+        {
+            "clase": "Storage Tank",
+            "total_obj": 1716,
+            "train_pct": 69.29,
+            "val_pct": 10.43,
+            "test_pct": 20.28,
+            "dev_train": 0.71,
+            "dev_val": 0.43,
+            "dev_test": 0.28
+        },
+        {
+            "clase": "Aircraft",
+            "total_obj": 1300,
+            "train_pct": 70.62,
+            "val_pct": 10.46,
+            "test_pct": 18.92,
+            "dev_train": 0.62,
+            "dev_val": 0.46,
+            "dev_test": 1.08
+        },
+        {
+            "clase": "Tower & Pylon",
+            "total_obj": 457,
+            "train_pct": 70.02,
+            "val_pct": 9.63,
+            "test_pct": 20.35,
+            "dev_train": 0.02,
+            "dev_val": 0.37,
+            "dev_test": 0.35
+        }
+    ]
+}

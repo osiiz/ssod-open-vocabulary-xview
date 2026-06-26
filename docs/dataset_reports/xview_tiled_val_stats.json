@@ -1,0 +1,62 @@
+{
+    "dataset_info": {
+        "total_images": 2653,
+        "images_with_objects": 1301,
+        "images_with_objects_pct": 49.04,
+        "avg_resolution_width": 679.95,
+        "avg_resolution_height": 674.05,
+        "dir_size_str": "3.40 GB"
+    },
+    "objects_info": {
+        "total_objects": 59157,
+        "avg_objects_per_valid_image": 45.47,
+        "max_objects_in_single_image": 725
+    },
+    "class_distribution": {
+        "Building": {
+            "id": 7,
+            "count": 32887,
+            "pct": 55.59
+        },
+        "Light Vehicle": {
+            "id": 2,
+            "count": 21147,
+            "pct": 35.75
+        },
+        "Heavy Vehicle": {
+            "id": 3,
+            "count": 3434,
+            "pct": 5.8
+        },
+        "Maritime Vessel": {
+            "id": 5,
+            "count": 523,
+            "pct": 0.88
+        },
+        "Railway Vehicle": {
+            "id": 4,
+            "count": 438,
+            "pct": 0.74
+        },
+        "Engineering Vehicle": {
+            "id": 6,
+            "count": 369,
+            "pct": 0.62
+        },
+        "Storage Tank": {
+            "id": 8,
+            "count": 179,
+            "pct": 0.3
+        },
+        "Aircraft": {
+            "id": 1,
+            "count": 136,
+            "pct": 0.23
+        },
+        "Tower & Pylon": {
+            "id": 9,
+            "count": 44,
+            "pct": 0.07
+        }
+    }
+}

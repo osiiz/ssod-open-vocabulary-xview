@@ -1,0 +1,124 @@
+version: 1
+iou_cluster: 0.7
+prompt_sets:
+  simple:
+    Aircraft:
+    - Aircraft
+    Building:
+    - Building
+    Engineering Vehicle:
+    - Engineering Vehicle
+    Heavy Vehicle:
+    - Heavy Vehicle
+    Light Vehicle:
+    - Light Vehicle
+    Maritime Vessel:
+    - Maritime Vessel
+    Railway Vehicle:
+    - Railway Vehicle
+    Storage Tank:
+    - Storage Tank
+    Tower & Pylon:
+    - Tower & Pylon
+  original:
+    Aircraft:
+    - fixed-wing aircraft
+    - small aircraft
+    - passenger plane
+    - cargo plane
+    - helicopter
+    Building:
+    - building
+    - aircraft hangar
+    - damaged building
+    - facility
+    - hut
+    - tent
+    - shed
+    Engineering Vehicle:
+    - engineering vehicle
+    - reach stacker
+    - straddle carrier
+    - dump truck
+    - haul truck
+    - scraper
+    - tractor
+    - front loader
+    - bulldozer
+    - excavator
+    - cement mixer
+    - ground grader
+    Heavy Vehicle:
+    - bus
+    - truck
+    - cargo truck
+    - truck tractor with box trailer
+    - truck tractor
+    - trailer
+    - truck tractor with flatbed trailer
+    - truck tractor with liquid tank
+    - crane truck
+    Light Vehicle:
+    - passenger vehicle
+    - small car
+    - pickup truck
+    Maritime Vessel:
+    - motorboat
+    - sailboat
+    - tugboat
+    - barge
+    - fishing vessel
+    - ferry
+    - yacht
+    - container ship
+    - oil tanker
+    Railway Vehicle:
+    - railway vehicle
+    - passenger train car
+    - cargo train car
+    - container train car
+    - flat train car
+    - tank train car
+    - locomotive
+    Storage Tank:
+    - storage tank
+    Tower & Pylon:
+    - pylon
+    - tower
+  synonyms:
+    Aircraft:
+    - plane
+    - airplane
+    - jet
+    Building:
+    - building
+    - warehouse
+    - hangar
+    Engineering Vehicle:
+    - excavator
+    - bulldozer
+    - crane
+    Heavy Vehicle:
+    - truck
+    - bus
+    - lorry
+    Light Vehicle:
+    - car
+    - automobile
+    - vehicle
+    Maritime Vessel:
+    - ship
+    - boat
+    - vessel
+    Railway Vehicle:
+    - train
+    - locomotive
+    - railcar
+    Storage Tank:
+    - tank
+    - silo
+    - cistern
+    Tower & Pylon:
+    - pylon
+    - mast
+    - tower

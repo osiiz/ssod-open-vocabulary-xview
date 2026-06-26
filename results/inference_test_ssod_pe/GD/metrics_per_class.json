@@ -1,0 +1,11 @@
+{
+    "Aircraft": 0.7024,
+    "Light Vehicle": 0.2558,
+    "Heavy Vehicle": 0.0711,
+    "Railway Vehicle": 0.0,
+    "Maritime Vessel": 0.1775,
+    "Engineering Vehicle": 0.0,
+    "Building": 0.2384,
+    "Storage Tank": 0.0178,
+    "Tower & Pylon": 0.0
+}

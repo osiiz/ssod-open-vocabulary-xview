@@ -1,0 +1,19 @@
+{
+  "labeled_images": 1106,
+  "labeled_annotations": 41119,
+  "unlabeled_images_with_pe": 5639,
+  "pe_annotations_total": 138723,
+  "pe_per_source": {
+    "source_0": 84132,
+    "source_1": 54591
+  },
+  "dedup_iou_thresh": null,
+  "dedup_priority": null,
+  "pe_annotations_dedup_dropped": 0,
+  "exclusion_annotations_total": 849442,
+  "exclusion_per_source": {
+    "exclusion_source_0": 849442
+  },
+  "total_images": 6745,
+  "total_annotations": 1029284
+}

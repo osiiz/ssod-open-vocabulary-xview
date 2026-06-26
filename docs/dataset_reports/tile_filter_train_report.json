@@ -1,0 +1,23 @@
+{
+  "input_coco_json": "./results/preprocess/split/xview_train.json",
+  "output_coco_json": "results/preprocess/tile_images/train/COCO_annotations.json",
+  "params": {
+    "tile_width": 700,
+    "tile_height": 700,
+    "min_tile_width": 300,
+    "min_tile_height": 300,
+    "min_visibility": 0.3
+  },
+  "stats": {
+    "clipped_annotations": 66005,
+    "dropped_by_visibility": 21254,
+    "dropped_non_positive_after_clip": 0,
+    "intersecting_annotations": 437702,
+    "kept_annotations": 416448,
+    "total_annotations_seen": 9115128
+  },
+  "ratios": {
+    "keep_ratio_on_intersections": 0.951442,
+    "dropped_visibility_ratio_on_intersections": 0.048558
+  }
+}

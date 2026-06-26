@@ -1,0 +1,6 @@
+outs:
+- md5: 4bc1af453d14ff19497f13ccf893b763.dir
+  size: 33543993789
+  nfiles: 1133
+  hash: md5
+  path: xView

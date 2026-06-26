@@ -1,0 +1,39 @@
+# Environment de reprodución do TFG (SSOD con detectores de vocabulario aberto).
+# Contén só as dependencias que emprega o pipeline DVC (preprocesamento, Faster R-CNN,
+# Grounding DINO, Rex-Omni, agregación multi-prompt e avaliación COCO).
+name: tfg_lois_ssod-vocabulario-aberto
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pytorch=2.1.0
+  - torchvision=0.16.0
+  - pytorch-cuda=11.8
+  - torchmetrics=0.10.3
+  - pyyaml
+  - pycocotools
+  - fire
+  - pillow
+  - pandas
+  - git
+  - dvc
+  - pytest
+  - pip
+  - pip:
+      - numpy<2
+      - opencv-python
+      - matplotlib
+      - seaborn
+      - shapely
+      # Detectores de vocabulario aberto (HuggingFace) + Rex-Omni vendorizado
+      - transformers==4.51.3
+      - huggingface-hub==0.36.2
+      - safetensors==0.4.3
+      - timm==0.9.16
+      - accelerate==1.10.1
+      - qwen_vl_utils==0.0.14
+      - -e ./vendor/Rex-Omni
+      # Fusión de caixas para o ensemble multi-prompt
+      - ensemble-boxes==1.0.9

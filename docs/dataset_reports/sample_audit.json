@@ -1,0 +1,47 @@
+{
+    "Aircraft": {
+        "original_instances": 862,
+        "sampled_instances": 129,
+        "retention_percentage": 14.97
+    },
+    "Light Vehicle": {
+        "original_instances": 153474,
+        "sampled_instances": 23007,
+        "retention_percentage": 14.99
+    },
+    "Heavy Vehicle": {
+        "original_instances": 24428,
+        "sampled_instances": 3751,
+        "retention_percentage": 15.36
+    },
+    "Railway Vehicle": {
+        "original_instances": 2690,
+        "sampled_instances": 479,
+        "retention_percentage": 17.81
+    },
+    "Maritime Vessel": {
+        "original_instances": 3598,
+        "sampled_instances": 540,
+        "retention_percentage": 15.01
+    },
+    "Engineering Vehicle": {
+        "original_instances": 2771,
+        "sampled_instances": 416,
+        "retention_percentage": 15.01
+    },
+    "Building": {
+        "original_instances": 224555,
+        "sampled_instances": 33775,
+        "retention_percentage": 15.04
+    },
+    "Storage Tank": {
+        "original_instances": 1198,
+        "sampled_instances": 180,
+        "retention_percentage": 15.03
+    },
+    "Tower & Pylon": {
+        "original_instances": 321,
+        "sampled_instances": 48,
+        "retention_percentage": 14.95
+    }
+}

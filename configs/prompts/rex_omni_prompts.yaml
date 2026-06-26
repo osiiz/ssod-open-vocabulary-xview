@@ -1,0 +1,22 @@
+version: 1
+language: en
+prompt_groups:
+  - name: xview_macro_classes
+    phrases:
+      - aircraft
+      - light vehicle
+      - heavy vehicle
+      - railway vehicle
+      - maritime vessel
+      - engineering vehicle
+      - building
+      - storage tank
+      - tower
+
+  - name: fine_grained_anchors
+    phrases:
+      - helicopter
+      - ship
+      - truck
+      - train
+      - hangar

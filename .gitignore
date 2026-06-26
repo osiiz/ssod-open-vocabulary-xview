@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# DVC: datos, saídas e caché (non se versionan; obtéñense co pipeline / remote)
+/results/
+/logs/
+/debug/
+/probas_results/
+.dvc/cache/
+.dvc/tmp/
+
+# Datasets (xView descárgase aparte; só se inclúe o mapeo de clases)
+/xView/train_images/
+/xView/val_images/
+*.geojson
+
+# Pesos de modelos
+*.pt
+*.pth
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store

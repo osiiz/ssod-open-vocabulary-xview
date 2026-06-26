@@ -1,0 +1,14 @@
+{
+  "input_file": "results/preprocess/convert_to_coco/COCO_annotations.json",
+  "output_file": "results/preprocess/convert_to_coco/COCO_full_annotations.json",
+  "stats": {
+    "total_annotations": 591427,
+    "invalid_outside_frame": 0,
+    "invalid_non_positive_area": 0,
+    "clipped_annotations": 0,
+    "removed_annotations": 0,
+    "missing_image_reference": 0
+  },
+  "remaining_annotations": 591427,
+  "invalid_by_class": {}
+}

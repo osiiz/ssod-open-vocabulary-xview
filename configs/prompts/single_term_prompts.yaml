@@ -1,0 +1,76 @@
+version: 1
+iou_cluster: 0.7
+
+# Prompt sets con exactamente UN termino por categoria (9 terminos por set).
+#
+# Motivacion: multiples frases para la misma clase en un prompt compiten entre
+# si en DINO, reduciendo la confianza de la deteccion correcta al distribuirla
+# entre frases de la misma clase. Con 1 termino por clase el argmax siempre
+# elige entre exactamente 9 opciones, sin ambiguedad intra-clase.
+#
+# Diseno: 5 sets de sinonimos sin prefijos de perspectiva.
+# Vocabulario base extraido de synonyms_prompts.yaml (mejor resultado en exp. anterior).
+# Los terminos son genericos: se evitan subcategorias muy especificas.
+#
+#   set1_direct      — nombres de clase estandar del dataset
+#   set2_synonyms_a  — sinonimos primarios (los mas comunes)
+#   set3_synonyms_b  — sinonimos secundarios
+#   set4_synonyms_c  — sinonimos terciarios / vocabulario alternativo
+#   set5_synonyms_d  — subcategorias representativas y genericas
+
+prompt_sets:
+
+  set1_direct:
+    Aircraft:             [aircraft]
+    Building:             [building]
+    Engineering Vehicle:  [engineering vehicle]
+    Heavy Vehicle:        [heavy vehicle]
+    Light Vehicle:        [light vehicle]
+    Maritime Vessel:      [maritime vessel]
+    Railway Vehicle:      [railway vehicle]
+    Storage Tank:         [storage tank]
+    Tower & Pylon:        [tower]
+
+  set2_synonyms_a:
+    Aircraft:             [plane]
+    Building:             [house]           
+    Engineering Vehicle:  [excavator]       # 21.4% de Eng. Vehicles en xView
+    Heavy Vehicle:        [truck]           # 34.9% de Heavy Vehicles en xView
+    Light Vehicle:        [car]             # 96.5% de Light Vehicles son Small Car
+    Maritime Vessel:      [ship]
+    Railway Vehicle:      [train]
+    Storage Tank:         [tank]
+    Tower & Pylon:        [pylon]           # 81.5% de Tower & Pylon son Pylon
+
+  set3_synonyms_b:
+    Aircraft:             [airplane]
+    Building:             [warehouse]       # edificios industriales/almacenes
+    Engineering Vehicle:  [bulldozer]       # Front loader/Bulldozer 15.9%
+    Heavy Vehicle:        [bus]             # 20.0% de Heavy Vehicles en xView
+    Light Vehicle:        [automobile]
+    Maritime Vessel:      [motorboat]       # mas comun: 28.5% de Maritime Vessels
+    Railway Vehicle:      [passenger car]   # 42.1% de Railway Vehicles en xView
+    Storage Tank:         [silo]
+    Tower & Pylon:        [mast]
+
+  set4_synonyms_c:
+    Aircraft:             [jet]
+    Building:             [facility]        # instalaciones industriales/militares
+    Engineering Vehicle:  [dump truck]      # mas comun: 34.3% de Eng. Vehicles
+    Heavy Vehicle:        [lorry]
+    Light Vehicle:        [vehicle]
+    Maritime Vessel:      [vessel]
+    Railway Vehicle:      [freight car]     # 47.8% de Railway Vehicles en xView
+    Storage Tank:         [fuel tank]
+    Tower & Pylon:        [antenna]
+
+  set5_synonyms_d:
+    Aircraft:             [helicopter]      # 5.8% pero subclase propia en xView
+    Building:             [shed]            # subclase xView: Hut/Tent + Shed
+    Engineering Vehicle:  [construction vehicle]  # termino generico para la clase
+    Heavy Vehicle:        [trailer]         # 11.8% de Heavy Vehicles en xView
+    Light Vehicle:        [pickup]
+    Maritime Vessel:      [boat]
+    Railway Vehicle:      [railcar]
+    Storage Tank:         [reservoir]
+    Tower & Pylon:        [pole]

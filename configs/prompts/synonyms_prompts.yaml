@@ -1,0 +1,19 @@
+version: 1
+iou_cluster: 0.4
+
+# Prompt set "synonyms": sustantivos directos alternativos a los nombres de clase
+# formales. Sin calificadores de perspectiva ni contexto. Mismo estilo que "simple"
+# pero usando vocabulario más común en el preentrenamiento de DINO/GLIP.
+
+prompt_sets:
+
+  synonyms:
+    Aircraft:            [plane, airplane, jet]
+    Building:            [building, warehouse, hangar]
+    Engineering Vehicle: [excavator, bulldozer, crane]
+    Heavy Vehicle:       [truck, bus, lorry]
+    Light Vehicle:       [car, automobile, vehicle]
+    Maritime Vessel:     [ship, boat, vessel]
+    Railway Vehicle:     [train, locomotive, railcar]
+    Storage Tank:        [tank, silo, cistern]
+    Tower & Pylon:       [pylon, mast, tower]

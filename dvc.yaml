@@ -1,0 +1,1183 @@
+vars:
+  - params.yaml
+
+stages:
+  preprocess_convert_to_coco:
+    cmd: python -m src.preprocessing.xView_to_coco
+      ${xview.extracted_data_path}
+      ./results/preprocess/convert_to_coco
+      --class_map_path=${xview.extracted_data_path}/xView_macro_classes.json
+      --erroneous_type_ids ${preprocessing.erroneous_type_ids}
+      --missing_image_ids ${preprocessing.missing_image_ids}
+    deps:
+      - src/preprocessing/xView_to_coco.py
+      - ${xview.extracted_data_path}/train_images
+      - ${xview.extracted_data_path}/xView_train.geojson
+      - ${xview.extracted_data_path}/xView_macro_classes.json
+    params:
+      - preprocessing.erroneous_type_ids
+      - preprocessing.missing_image_ids
+    outs:
+      - ./results/preprocess/convert_to_coco/COCO_annotations.json
+      - ./results/preprocess/convert_to_coco/xView_class_map.json
+
+  preprocess_validate_coco_boxes:
+    cmd: python -m src.preprocessing.validate_coco_boxes
+      ./results/preprocess/convert_to_coco/COCO_annotations.json
+      ./results/preprocess/convert_to_coco/COCO_full_annotations.json
+      --report_file docs/dataset_reports/invalid_boxes_report.json
+    deps:
+      - src/preprocessing/validate_coco_boxes.py
+      - ./results/preprocess/convert_to_coco/COCO_annotations.json
+    outs:
+      - ./results/preprocess/convert_to_coco/COCO_full_annotations.json
+    metrics:
+      - docs/dataset_reports/invalid_boxes_report.json:
+          cache: false
+
+  dataset_statistics_original:
+    cmd: python -m src.utils.dataset_statistics
+      ./results/preprocess/convert_to_coco/COCO_full_annotations.json
+      --img_dir ${xview.extracted_data_path}/train_images
+      --out_file docs/dataset_reports/xview_original_stats.json
+    deps:
+      - src/utils/dataset_statistics.py
+      - ./results/preprocess/convert_to_coco/COCO_full_annotations.json
+      - ${xview.extracted_data_path}/train_images
+    metrics:
+      - docs/dataset_reports/xview_original_stats.json:
+          cache: false
+
+  preprocess_split:
+    cmd: python -m src.preprocessing.split_coco
+      ./results/preprocess/convert_to_coco/COCO_full_annotations.json
+      ./results/preprocess/split
+      --seed ${preprocessing.split_seed}
+      --ratios ${preprocessing.split_ratios}
+    deps:
+      - src/preprocessing/split_coco.py
+      - ./results/preprocess/convert_to_coco/COCO_full_annotations.json
+    params:
+      - preprocessing.split_seed
+      - preprocessing.split_ratios
+    outs:
+      - ./results/preprocess/split/xview_train.json
+      - ./results/preprocess/split/xview_val.json
+      - ./results/preprocess/split/xview_test.json
+
+  preprocess_sample_stratified:
+    cmd: python -m src.preprocessing.sample_coco_stratified
+      ./results/preprocess/split/xview_train.json
+      ./results/preprocess/split/xview_train_sampled.json
+      ./results/preprocess/split/xview_train_unlabeled.json
+      --ratio ${preprocessing.train_sample_ratio}
+      --seed ${preprocessing.sample_seed}
+      --iters ${preprocessing.sample_iters}
+      --nested_ratios ${preprocessing.sample_nested_ratios}
+    deps:
+      - src/preprocessing/sample_coco_stratified.py
+      - ./results/preprocess/split/xview_train.json
+    params:
+      - preprocessing.train_sample_ratio
+      - preprocessing.unlabeled_sample_ratio
+      - preprocessing.unlabeled_tag
+      - preprocessing.sample_seed
+      - preprocessing.sample_iters
+      - preprocessing.sample_nested_ratios
+    outs:
+      - ./results/preprocess/split/xview_train_sampled.json
+      - ./results/preprocess/split/xview_train_unlabeled.json
+
+  preprocess_tile_images:
+    foreach:
+      - train
+      - train_sampled
+      - val
+      - test
+    do:
+      cmd: python -m src.preprocessing.coco_tiling
+        ${xview.extracted_data_path}/train_images
+        ./results/preprocess/split/xview_${item}.json
+        ./results/preprocess/tile_images/${item}
+        --tile_width=${preprocessing.tile_width}
+        --tile_height=${preprocessing.tile_height}
+        --min_tile_width=${preprocessing.min_tile_width}
+        --min_tile_height=${preprocessing.min_tile_height}
+        --min_visibility=${preprocessing.min_visibility}
+        --report_file docs/dataset_reports/tile_filter_${item}_report.json
+      deps:
+        - src/preprocessing/coco_tiling.py
+        - ${xview.extracted_data_path}/train_images
+        - ./results/preprocess/split/xview_${item}.json
+      params:
+        - preprocessing.tile_width
+        - preprocessing.tile_height
+        - preprocessing.min_tile_width
+        - preprocessing.min_tile_height
+        - preprocessing.min_visibility
+      outs:
+        - ./results/preprocess/tile_images/${item}/images/
+        - ./results/preprocess/tile_images/${item}/COCO_annotations.json
+      metrics:
+        - docs/dataset_reports/tile_filter_${item}_report.json:
+            cache: false
+
+  dataset_statistics_tiled:
+    foreach:
+      - train
+      - train_sampled
+      - val
+      - test
+    do:
+      cmd: python -m src.utils.dataset_statistics
+        ./results/preprocess/tile_images/${item}/COCO_annotations.json
+        --img_dir ./results/preprocess/tile_images/${item}/images/
+        --out_file docs/dataset_reports/xview_tiled_${item}_stats.json
+      deps:
+        - src/utils/dataset_statistics.py
+        - ./results/preprocess/tile_images/${item}/COCO_annotations.json
+        - ./results/preprocess/tile_images/${item}/images/
+      metrics:
+        - docs/dataset_reports/xview_tiled_${item}_stats.json:
+            cache: false
+
+  evaluate_splits_distribution:
+    cmd: python -m src.utils.check_splits
+      ./results/preprocess/tile_images
+      --ratios ${preprocessing.split_ratios}
+      --out_file docs/dataset_reports/split_distribution_metrics.json
+    deps:
+      - src/utils/check_splits.py
+      - ./results/preprocess/tile_images/train/COCO_annotations.json
+      - ./results/preprocess/tile_images/val/COCO_annotations.json
+      - ./results/preprocess/tile_images/test/COCO_annotations.json
+    params:
+      - preprocessing.split_ratios
+    metrics:
+      - docs/dataset_reports/split_distribution_metrics.json:
+          cache: false
+
+  evaluate_sample_distribution:
+    cmd: python -m src.utils.audit_sample
+      ./results/preprocess/split/xview_train.json
+      ./results/preprocess/split/xview_train_sampled.json
+      --out_report docs/dataset_reports/sample_audit.json
+    deps:
+      - src/utils/audit_sample.py
+      - ./results/preprocess/split/xview_train.json
+      - ./results/preprocess/split/xview_train_sampled.json
+    metrics:
+      - docs/dataset_reports/sample_audit.json:
+          cache: false
+
+  train_model:
+    cmd: python -m src.training.train
+      --config_file ${training.model_config}
+      --train_img_folder ./results/preprocess/tile_images/train/images/
+      --train_ann_file ./results/preprocess/tile_images/train/COCO_annotations.json
+      --val_img_folder ./results/preprocess/tile_images/val/images/
+      --val_ann_file ./results/preprocess/tile_images/val/COCO_annotations.json
+      --output_dir ./results/models/base/
+      --seed ${training.seed}
+      --num_epochs ${training.num_epochs}
+      --batch_size ${training.batch_size}
+      --accumulation_steps ${training.accumulation_steps}
+      --num_workers ${training.num_workers}
+      --learning_rate ${training.learning_rate}
+      --num_classes ${training.num_classes}
+      --lr_milestones ${training.lr_milestones}
+      --lr_gamma ${training.lr_gamma}
+      --save_every ${training.save_every}
+      --keep_last_n ${training.keep_last_n}
+      --eval_every ${training.eval_every}
+      --device ${training.device}
+      --focal_loss ${training.focal_loss}
+      --warmup_epochs ${training.warmup_epochs}
+      --log_every_train ${training.log_every_train}
+      --log_every_eval ${training.log_every_eval}
+      --train_empty_fraction ${training.train_empty_fraction}
+      --augment
+    deps:
+      - src/training/train.py
+      - ${training.model_config}
+      - ./results/preprocess/tile_images/train/images/
+      - ./results/preprocess/tile_images/train/COCO_annotations.json
+      - ./results/preprocess/tile_images/val/images/
+      - ./results/preprocess/tile_images/val/COCO_annotations.json
+    params:
+      - training.model_config
+      - training.num_epochs
+      - training.batch_size
+      - training.num_workers
+      - training.accumulation_steps
+      - training.learning_rate
+      - training.num_classes
+      - training.lr_milestones
+      - training.lr_gamma
+      - training.save_every
+      - training.keep_last_n
+      - training.eval_every
+      - training.device
+      - training.focal_loss
+      - training.warmup_epochs
+      - training.log_every_train
+      - training.log_every_eval
+      - training.train_empty_fraction
+    outs:
+      - ./results/models/base/fasterrcnn_best.pth:
+          persist: true
+      - ./results/models/base/train.log:
+          persist: true
+
+  evaluate_model:
+    cmd: python -m src.inference.torvis_detection_inference
+      --model_config_file ${training.model_config}
+      --model_checkpoint ${evaluation.model_checkpoint}
+      --img_dir ./results/preprocess/tile_images/test/images/
+      --ann_file ./results/preprocess/tile_images/test/COCO_annotations.json
+      --output_folder ./results/inference_test/
+      --batch_size ${evaluation.batch_size}
+    deps:
+      - src/inference/torvis_detection_inference.py
+      - ${training.model_config}
+      - ${evaluation.model_checkpoint}
+      - ./results/preprocess/tile_images/test/images/
+      - ./results/preprocess/tile_images/test/COCO_annotations.json
+    params:
+      - training.model_config
+      - evaluation.model_checkpoint
+      - evaluation.batch_size
+    metrics:
+      - ./results/inference_test/metrics.json:
+          cache: false
+
+  generate_charts:
+    # Figuras (saída en docs/charts/): dependen dos detection_results.json completos, que non se
+    # distribúen no almacén. Conxélase para que dvc repro non falle; as figuras van xa no repo.
+    frozen: true
+    cmd: >-
+      python -m src.utils.charts.plot_train
+      ./results/models/base/train.log
+      ./docs/charts/training_loss_vs_map.png
+      --filter_start 2 &&
+      python -m src.utils.charts.plot_ap_per_class
+      ./results/inference_test/metrics_per_class.json
+      ./docs/charts/ap_per_class.png &&
+      python -m src.utils.charts.plot_ap_vs_frequency
+      ./docs/dataset_reports/xview_tiled_train_stats.json
+      ./results/inference_test/metrics_per_class.json
+      ./docs/charts/ap_correlation.png &&
+      python -m src.utils.charts.plot_class_distribution
+      ./docs/dataset_reports/xview_tiled_train_stats.json
+      ./docs/dataset_reports/xview_tiled_val_stats.json
+      ./docs/charts/class_distribution.png &&
+      python -m src.utils.charts.plot_split_deviation
+      ./docs/dataset_reports/split_distribution_metrics.json
+      ./docs/charts/split_deviation_audit.png &&
+      python -m src.utils.charts.plot_confusion_matrix
+      --gt_json ./results/preprocess/tile_images/test/COCO_annotations.json
+      --dt_json ./results/inference_test/detection_results.json
+      --out_png ./docs/charts/confusion_matrix.png
+      --score_thresh ${generate_charts.score_thresh}
+      --iou_thresh ${generate_charts.iou_thresh}
+
+    deps:
+      - src/utils/charts/plot_train.py
+      - src/utils/charts/plot_ap_per_class.py
+      - src/utils/charts/plot_ap_vs_frequency.py
+      - src/utils/charts/plot_class_distribution.py
+      - src/utils/charts/plot_split_deviation.py
+      - src/utils/charts/plot_confusion_matrix.py
+      - ./results/models/base/train.log
+      - ./results/inference_test/metrics_per_class.json
+      - ./docs/dataset_reports/xview_tiled_train_stats.json
+      - ./docs/dataset_reports/xview_tiled_val_stats.json
+      - ./docs/dataset_reports/split_distribution_metrics.json
+      - ./results/preprocess/tile_images/test/COCO_annotations.json
+      - ./results/inference_test/detection_results.json
+
+  train_ssod_baseline:
+    cmd: python -m src.training.train
+      --config_file ${training.model_config}
+      --train_img_folder ./results/preprocess/tile_images/train_sampled/images/
+      --train_ann_file ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      --val_img_folder ./results/preprocess/tile_images/val/images/
+      --val_ann_file ./results/preprocess/tile_images/val/COCO_annotations.json
+      --output_dir ./results/models/ssod_baseline/
+      --seed ${training.seed}
+      --num_epochs ${training_ssod_baseline.num_epochs}
+      --batch_size ${training.batch_size}
+      --accumulation_steps ${training.accumulation_steps}
+      --num_workers ${training.num_workers}
+      --learning_rate ${training_ssod_baseline.learning_rate}
+      --num_classes ${training.num_classes}
+      --lr_milestones ${training_ssod_baseline.lr_milestones}
+      --lr_gamma ${training_ssod_baseline.lr_gamma}
+      --save_every ${training_ssod_baseline.save_every}
+      --keep_last_n ${training_ssod_baseline.keep_last_n}
+      --eval_every ${training_ssod_baseline.eval_every}
+      --device ${training.device}
+      --focal_loss ${training_ssod_baseline.focal_loss}
+      --warmup_epochs ${training_ssod_baseline.warmup_epochs}
+      --log_every_train ${training_ssod_baseline.log_every_train}
+      --log_every_eval ${training_ssod_baseline.log_every_eval}
+      --train_empty_fraction ${training_ssod_baseline.train_empty_fraction}
+      --augment
+    deps:
+      - src/training/train.py
+      - ${training.model_config}
+      - ./results/preprocess/tile_images/train_sampled/images/
+      - ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      - ./results/preprocess/tile_images/val/images/
+      - ./results/preprocess/tile_images/val/COCO_annotations.json
+    params:
+      - training.model_config
+      - training_ssod_baseline.num_epochs
+      - training.batch_size
+      - training.num_workers
+      - training.accumulation_steps
+      - training_ssod_baseline.learning_rate
+      - training.num_classes
+      - training_ssod_baseline.lr_milestones
+      - training_ssod_baseline.lr_gamma
+      - training_ssod_baseline.save_every
+      - training_ssod_baseline.keep_last_n
+      - training_ssod_baseline.eval_every
+      - training.device
+      - training.focal_loss
+      - training_ssod_baseline.warmup_epochs
+      - training_ssod_baseline.log_every_train
+      - training_ssod_baseline.log_every_eval
+      - training_ssod_baseline.train_empty_fraction
+    outs:
+      - ./results/models/ssod_baseline/fasterrcnn_best.pth:
+          persist: true
+      - ./results/models/ssod_baseline/train.log:
+          persist: true
+
+  evaluate_ssod_baseline:
+    cmd: python -m src.inference.torvis_detection_inference
+      --model_config_file ${training.model_config}
+      --model_checkpoint ./results/models/ssod_baseline/fasterrcnn_best.pth
+      --img_dir ./results/preprocess/tile_images/test/images/
+      --ann_file ./results/preprocess/tile_images/test/COCO_annotations.json
+      --output_folder ./results/inference_test_ssod_baseline/
+      --batch_size ${evaluation.batch_size}
+    deps:
+      - src/inference/torvis_detection_inference.py
+      - ${training.model_config}
+      - ./results/models/ssod_baseline/fasterrcnn_best.pth
+      - ./results/preprocess/tile_images/test/images/
+      - ./results/preprocess/tile_images/test/COCO_annotations.json
+    params:
+      - training.model_config
+      - evaluation.batch_size
+    metrics:
+      - ./results/inference_test_ssod_baseline/metrics.json:
+          cache: false
+
+  generate_charts_ssod_baseline:
+    # Figuras (saída en docs/charts_ssod_baseline/): ver nota en generate_charts. Conxélase.
+    frozen: true
+    cmd: >-
+      python -m src.utils.charts.plot_train
+      ./results/models/ssod_baseline/train.log
+      ./docs/charts_ssod_baseline/training_loss_vs_map.png
+      --filter_start 2 &&
+      python -m src.utils.charts.plot_ap_per_class
+      ./results/inference_test_ssod_baseline/metrics_per_class.json
+      ./docs/charts_ssod_baseline/ap_per_class.png &&
+      python -m src.utils.charts.plot_ap_vs_frequency
+      ./docs/dataset_reports/xview_tiled_train_sampled_stats.json
+      ./results/inference_test_ssod_baseline/metrics_per_class.json
+      ./docs/charts_ssod_baseline/ap_correlation.png &&
+      python -m src.utils.charts.plot_class_distribution
+      ./docs/dataset_reports/xview_tiled_train_sampled_stats.json
+      ./docs/dataset_reports/xview_tiled_val_stats.json
+      ./docs/charts_ssod_baseline/class_distribution.png &&
+      python -m src.utils.charts.plot_sample_audit
+      docs/dataset_reports/sample_audit.json
+      docs/charts_ssod_baseline/sample_retention_audit.png
+      --ratio ${preprocessing.train_sample_ratio} &&
+      python -m src.utils.charts.plot_confusion_matrix
+      --gt_json ./results/preprocess/tile_images/test/COCO_annotations.json
+      --dt_json ./results/inference_test_ssod_baseline/detection_results.json
+      --out_png ./docs/charts_ssod_baseline/confusion_matrix.png
+      --score_thresh ${generate_charts.score_thresh}
+      --iou_thresh ${generate_charts.iou_thresh}
+    deps:
+      - src/utils/charts/plot_train.py
+      - src/utils/charts/plot_ap_per_class.py
+      - src/utils/charts/plot_ap_vs_frequency.py
+      - src/utils/charts/plot_class_distribution.py
+      - src/utils/charts/plot_confusion_matrix.py
+      - src/utils/charts/plot_sample_audit.py
+      - ./results/models/ssod_baseline/train.log
+      - ./results/inference_test_ssod_baseline/metrics_per_class.json
+      - ./docs/dataset_reports/xview_tiled_train_sampled_stats.json
+      - ./docs/dataset_reports/xview_tiled_val_stats.json
+      - ./results/preprocess/tile_images/test/COCO_annotations.json
+      - ./results/inference_test_ssod_baseline/detection_results.json
+      - docs/dataset_reports/sample_audit.json
+    params:
+      - preprocessing.train_sample_ratio
+
+  preprocess_build_unlabeled_eval:
+    cmd: python -m src.preprocessing.filter_coco_by_image_ids
+      ./results/preprocess/split/xview_train.json
+      ./results/preprocess/split/xview_train_unlabeled.json
+      ./results/preprocess/split/xview_train_unlabeled_eval.json
+    deps:
+      - src/preprocessing/filter_coco_by_image_ids.py
+      - ./results/preprocess/split/xview_train.json
+      - ./results/preprocess/split/xview_train_unlabeled.json
+    outs:
+      - ./results/preprocess/split/xview_train_unlabeled_eval.json
+
+  preprocess_tile_images_unlabeled_eval:
+    cmd: python -m src.preprocessing.coco_tiling
+      ${xview.extracted_data_path}/train_images
+      ./results/preprocess/split/xview_train_unlabeled_eval.json
+      ./results/preprocess/tile_images/train_unlabeled_eval
+      --tile_width=${preprocessing.tile_width}
+      --tile_height=${preprocessing.tile_height}
+      --min_tile_width=${preprocessing.min_tile_width}
+      --min_tile_height=${preprocessing.min_tile_height}
+      --min_visibility=${preprocessing.min_visibility}
+      --report_file docs/dataset_reports/tile_filter_train_unlabeled_eval_report.json
+    deps:
+      - src/preprocessing/coco_tiling.py
+      - ${xview.extracted_data_path}/train_images
+      - ./results/preprocess/split/xview_train_unlabeled_eval.json
+    params:
+      - preprocessing.tile_width
+      - preprocessing.tile_height
+      - preprocessing.min_tile_width
+      - preprocessing.min_tile_height
+      - preprocessing.min_visibility
+    outs:
+      - ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+    metrics:
+      - docs/dataset_reports/tile_filter_train_unlabeled_eval_report.json:
+          cache: false
+
+
+  # ─── Single-term + Borda real ensemble (pipeline actual) ──────────────────
+
+  dino_single_term_inference:
+    cmd: python -m src.inference.dino_ensemble_inference_argmax
+      --img_dir ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      --ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --config configs/prompts/single_term_prompts.yaml
+      --output ./results/dino/single_term_raw/detection_results.json
+      --model_id ${dino.model_id}
+      --score_thresh ${dino_single_term.score_thresh}
+      --batch_size ${dino_single_term.batch_size}
+      --device ${dino.device}
+    deps:
+      - src/inference/dino_ensemble_inference_argmax.py
+      - src/inference/multi_prompt_ensemble.py
+      - configs/prompts/single_term_prompts.yaml
+      - ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+    params:
+      - dino.model_id
+      - dino.device
+      - dino_single_term.score_thresh
+      - dino_single_term.batch_size
+    outs:
+      - ./results/dino/single_term_raw/detection_results.json
+
+  rex_single_term_inference:
+    cmd: python -m src.inference.rex_ensemble_inference
+      --img_dir ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      --ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --config configs/prompts/single_term_prompts.yaml
+      --output ./results/rexomni/single_term_raw/detection_results.json
+      --model_id ${rexomni.model_id}
+      --batch_size ${rex_single_term.batch_size}
+    deps:
+      - src/inference/rex_ensemble_inference.py
+      - src/inference/multi_prompt_ensemble.py
+      - configs/prompts/single_term_prompts.yaml
+      - ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+    params:
+      - rexomni.model_id
+      - rex_single_term.batch_size
+    outs:
+      - ./results/rexomni/single_term_raw/detection_results.json
+
+  dino_single_term_aggregate_borda:
+    cmd: python -m src.inference.multi_prompt_ensemble
+      --detections ./results/dino/single_term_raw/detection_results.json
+      --ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --config configs/prompts/single_term_prompts.yaml
+      --mode borda
+      --label_key dino_label
+      --iou_thresh ${dino_single_term.iou_thresh}
+      --output ./results/dino/single_term_aggregated_borda_real/detection_results.json
+    deps:
+      - src/inference/multi_prompt_ensemble.py
+      - configs/prompts/single_term_prompts.yaml
+      - ./results/dino/single_term_raw/detection_results.json
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+    params:
+      - dino_single_term.iou_thresh
+    outs:
+      - ./results/dino/single_term_aggregated_borda_real/detection_results.json
+    metrics:
+      - ./results/dino/single_term_aggregated_borda_real/ensemble_stats.json:
+          cache: false
+
+  rex_single_term_aggregate_borda:
+    cmd: python -m src.inference.multi_prompt_ensemble
+      --detections ./results/rexomni/single_term_raw/detection_results.json
+      --ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --config configs/prompts/single_term_prompts.yaml
+      --mode borda
+      --label_key rex_label
+      --iou_thresh ${rex_single_term.iou_thresh}
+      --output ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+    deps:
+      - src/inference/multi_prompt_ensemble.py
+      - configs/prompts/single_term_prompts.yaml
+      - ./results/rexomni/single_term_raw/detection_results.json
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+    params:
+      - rex_single_term.iou_thresh
+    outs:
+      - ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+    metrics:
+      - ./results/rexomni/single_term_aggregated_borda_real/ensemble_stats.json:
+          cache: false
+
+  apply_pe_policies:
+    cmd: python scripts/build_combined_pe.py
+      --dino ./results/dino/single_term_aggregated_borda_real/detection_results.json
+      --rex ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+      --output_dir ./results/pe_policies/
+    deps:
+      - scripts/build_combined_pe.py
+      - ./results/dino/single_term_aggregated_borda_real/detection_results.json
+      - ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+    outs:
+      - ./results/pe_policies/dino_conservative/detection_results.json
+      - ./results/pe_policies/dino_intermediate/detection_results.json
+      - ./results/pe_policies/dino_balanced/detection_results.json
+      - ./results/pe_policies/rex_conservative/detection_results.json
+      - ./results/pe_policies/rex_intermediate/detection_results.json
+      - ./results/pe_policies/rex_balanced/detection_results.json
+
+  generate_pseudo_labels_faster10:
+    cmd: python -m src.inference.torvis_detection_inference
+      --model_config_file ${training.model_config}
+      --model_checkpoint ./results/models/ssod_baseline/fasterrcnn_best.pth
+      --img_dir ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      --ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --output_folder ./results/ssod/faster10_unlabeled_raw/
+      --score_thresh ${ssod.faster10_inference_score_thresh}
+      --batch_size ${evaluation.batch_size}
+    deps:
+      - src/inference/torvis_detection_inference.py
+      - ${training.model_config}
+      - ./results/models/ssod_baseline/fasterrcnn_best.pth
+      - ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+    params:
+      - training.model_config
+      - ssod.faster10_inference_score_thresh
+      - evaluation.batch_size
+    outs:
+      - ./results/ssod/faster10_unlabeled_raw/detection_results.json
+
+  # ─── Experimentos SSOD canónicos ──────────────────────────────────────────
+  #
+  # Fontes de pseudo-etiquetas:
+  #   FT = Faster10 (modelo ssod_baseline) con política de rescate per-clase
+  #        τ=0.7 + piso 300 PE/clase, sobre faster10_unlabeled_raw.
+  #   GD = Grounding DINO, política intermedia (apply_pe_policies).
+  #   RO = Rex-Omni, política intermedia (apply_pe_policies).
+  #
+  # Zonas de exclusión (anotacións con category_id = -1 que o adestramento
+  # marca como ignoradas): xéranse para FT (deteccións descartadas con score
+  # en [0.05, τ_eff)) e para RO (todo o ensemble que non pasa a política
+  # intermedia). DINO NON leva zonas (a súa cola de baixa confianza cobre
+  # case toda a imaxe e sería inviable).
+  #
+  # Seis experimentos: FT (FT só), GD, RO, FT_GD, FT_RO,
+  # FT_GD_RO. Compáranse contra a cota inferior (Faster10 sen PE) e a cota
+  # superior (train completo).
+
+  build_pe_policy_FT:
+    # Política Faster (FT) τ=0.7 + piso 300 PE/clase, máis zonas de exclusión
+    # (deteccións rexeitadas con score en [0.05, τ_eff)).
+    cmd: python scripts/build_faster_per_class_rescue.py
+      --raw ./results/ssod/faster10_unlabeled_raw/detection_results.json
+      --sampled_ann ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      --tau ${pe_policy_ft.tau}
+      --min_n ${pe_policy_ft.min_n}
+      --exclusion_low_thresh ${pe_policy_ft.exclusion_low_thresh}
+      --output ./results/pe_policies/FT/detection_results.json
+    deps:
+      - scripts/build_faster_per_class_rescue.py
+      - ./results/ssod/faster10_unlabeled_raw/detection_results.json
+      - ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+    params:
+      - pe_policy_ft.tau
+      - pe_policy_ft.min_n
+      - pe_policy_ft.exclusion_low_thresh
+    outs:
+      - ./results/pe_policies/FT/detection_results.json
+      - ./results/pe_policies/FT/exclusion_zones.json
+      - ./results/pe_policies/FT/policy_stats.json
+
+  build_rex_exclusion_zones_intermediate:
+    # Zonas de exclusión RO = ensemble Rex completo menos a política intermedia.
+    cmd: python scripts/build_rex_exclusion_zones.py
+      --raw_ensemble ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+      --policy ./results/pe_policies/rex_intermediate/detection_results.json
+      --output ./results/pe_policies/rex_intermediate/exclusion_zones.json
+    deps:
+      - scripts/build_rex_exclusion_zones.py
+      - ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+      - ./results/pe_policies/rex_intermediate/detection_results.json
+    outs:
+      - ./results/pe_policies/rex_intermediate/exclusion_zones.json
+
+  # ─── Variante SEN prompt-ensembling (noens) ───────────────────────────────
+  # Para illar canto da mellora dos detectores OV procede do prompt-ensembling,
+  # constrúense PE empregando un único prompt set (set1_direct, as 9 macro-clases)
+  # en vez do ensemble dos cinco. Por clase escóllese o mesmo número de PE que na
+  # política intermedia correspondente: en DINO as de maior score; en Rex ao azar
+  # (o seu score non é discriminante). Os experimentos FT_GD_noens, FT_RO_noens e
+  # FT_GD_RO_noens compáranse con FT_GD, FT_RO e FT_GD_RO.
+
+  build_pe_policy_GD_noens:
+    # DINO sen ensembling: só set1_direct, top-score por clase ata igualar o
+    # reparto de dino_intermediate. Sen zonas de exclusión (igual que GD).
+    cmd: python scripts/build_single_prompt_pe.py
+      --raw_single ./results/dino/single_term_raw/detection_results.json
+      --prompt_set set1_direct
+      --ref_policy ./results/pe_policies/dino_intermediate/detection_results.json
+      --categories ./results/preprocess/tile_images/test/COCO_annotations.json
+      --mode score
+      --output ./results/pe_policies/GD_noens/detection_results.json
+    deps:
+      - scripts/build_single_prompt_pe.py
+      - ./results/dino/single_term_raw/detection_results.json
+      - ./results/pe_policies/dino_intermediate/detection_results.json
+      - ./results/preprocess/tile_images/test/COCO_annotations.json
+    outs:
+      - ./results/pe_policies/GD_noens/detection_results.json
+
+  build_pe_policy_RO_noens:
+    # Rex sen ensembling: só set1_direct, selección aleatoria por clase (semente
+    # fixa) ata igualar o reparto de rex_intermediate. Xera tamén as zonas de
+    # exclusión RO (deteccións de set1_direct non seleccionadas).
+    cmd: python scripts/build_single_prompt_pe.py
+      --raw_single ./results/rexomni/single_term_raw/detection_results.json
+      --prompt_set set1_direct
+      --ref_policy ./results/pe_policies/rex_intermediate/detection_results.json
+      --categories ./results/preprocess/tile_images/test/COCO_annotations.json
+      --mode random
+      --seed ${training.seed}
+      --output ./results/pe_policies/RO_noens/detection_results.json
+      --exclusion_output ./results/pe_policies/RO_noens/exclusion_zones.json
+    deps:
+      - scripts/build_single_prompt_pe.py
+      - ./results/rexomni/single_term_raw/detection_results.json
+      - ./results/pe_policies/rex_intermediate/detection_results.json
+      - ./results/preprocess/tile_images/test/COCO_annotations.json
+    params:
+      - training.seed
+    outs:
+      - ./results/pe_policies/RO_noens/detection_results.json
+      - ./results/pe_policies/RO_noens/exclusion_zones.json
+
+  build_pe_training_data_FT:
+    # FT só: PE de Faster (rescate τ=0.7 floor 300) + zonas de exclusión FT.
+    cmd: python -m src.ssod.build_pe_dataset
+      --labeled_ann_file ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      --unlabeled_ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json
+      --exclusion_zones ./results/pe_policies/FT/exclusion_zones.json
+      --output_ann_file ./results/ssod/pe_datasets/FT/COCO_annotations.json
+      --output_stats_file ./results/ssod/pe_datasets/FT/build_stats.json
+    deps:
+      - src/ssod/build_pe_dataset.py
+      - ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      - ./results/pe_policies/FT/detection_results.json
+      - ./results/pe_policies/FT/exclusion_zones.json
+    params:
+      - ssod.pe_dataset_drop_empty_unlabeled
+    outs:
+      - ./results/ssod/pe_datasets/FT/COCO_annotations.json
+    metrics:
+      - ./results/ssod/pe_datasets/FT/build_stats.json:
+          cache: false
+
+  build_pe_training_data_GD:
+    # GD só: PE de DINO intermedia, sen zonas de exclusión.
+    cmd: python -m src.ssod.build_pe_dataset
+      --labeled_ann_file ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      --unlabeled_ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/dino_intermediate/detection_results.json
+      --output_ann_file ./results/ssod/pe_datasets/GD/COCO_annotations.json
+      --output_stats_file ./results/ssod/pe_datasets/GD/build_stats.json
+    deps:
+      - src/ssod/build_pe_dataset.py
+      - ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      - ./results/pe_policies/dino_intermediate/detection_results.json
+    params:
+      - ssod.pe_dataset_drop_empty_unlabeled
+    outs:
+      - ./results/ssod/pe_datasets/GD/COCO_annotations.json
+    metrics:
+      - ./results/ssod/pe_datasets/GD/build_stats.json:
+          cache: false
+
+  build_pe_training_data_RO:
+    # RO só: PE de Rex intermedia + zonas de exclusión RO.
+    cmd: python -m src.ssod.build_pe_dataset
+      --labeled_ann_file ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      --unlabeled_ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/rex_intermediate/detection_results.json
+      --exclusion_zones ./results/pe_policies/rex_intermediate/exclusion_zones.json
+      --output_ann_file ./results/ssod/pe_datasets/RO/COCO_annotations.json
+      --output_stats_file ./results/ssod/pe_datasets/RO/build_stats.json
+    deps:
+      - src/ssod/build_pe_dataset.py
+      - ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      - ./results/pe_policies/rex_intermediate/detection_results.json
+      - ./results/pe_policies/rex_intermediate/exclusion_zones.json
+    params:
+      - ssod.pe_dataset_drop_empty_unlabeled
+    outs:
+      - ./results/ssod/pe_datasets/RO/COCO_annotations.json
+    metrics:
+      - ./results/ssod/pe_datasets/RO/build_stats.json:
+          cache: false
+
+  build_pe_training_data_FT_GD:
+    # FT + DINO intermedia. Zonas de exclusión: só FT.
+    cmd: python -m src.ssod.build_pe_dataset
+      --labeled_ann_file ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      --unlabeled_ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json ./results/pe_policies/dino_intermediate/detection_results.json
+      --exclusion_zones ./results/pe_policies/FT/exclusion_zones.json
+      --output_ann_file ./results/ssod/pe_datasets/FT_GD/COCO_annotations.json
+      --output_stats_file ./results/ssod/pe_datasets/FT_GD/build_stats.json
+    deps:
+      - src/ssod/build_pe_dataset.py
+      - ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      - ./results/pe_policies/FT/detection_results.json
+      - ./results/pe_policies/FT/exclusion_zones.json
+      - ./results/pe_policies/dino_intermediate/detection_results.json
+    params:
+      - ssod.pe_dataset_drop_empty_unlabeled
+    outs:
+      - ./results/ssod/pe_datasets/FT_GD/COCO_annotations.json
+    metrics:
+      - ./results/ssod/pe_datasets/FT_GD/build_stats.json:
+          cache: false
+
+  build_pe_training_data_FT_RO:
+    # FT + Rex intermedia. Zonas de exclusión: FT + RO.
+    cmd: python -m src.ssod.build_pe_dataset
+      --labeled_ann_file ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      --unlabeled_ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json ./results/pe_policies/rex_intermediate/detection_results.json
+      --exclusion_zones ./results/pe_policies/FT/exclusion_zones.json ./results/pe_policies/rex_intermediate/exclusion_zones.json
+      --output_ann_file ./results/ssod/pe_datasets/FT_RO/COCO_annotations.json
+      --output_stats_file ./results/ssod/pe_datasets/FT_RO/build_stats.json
+    deps:
+      - src/ssod/build_pe_dataset.py
+      - ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      - ./results/pe_policies/FT/detection_results.json
+      - ./results/pe_policies/FT/exclusion_zones.json
+      - ./results/pe_policies/rex_intermediate/detection_results.json
+      - ./results/pe_policies/rex_intermediate/exclusion_zones.json
+    params:
+      - ssod.pe_dataset_drop_empty_unlabeled
+    outs:
+      - ./results/ssod/pe_datasets/FT_RO/COCO_annotations.json
+    metrics:
+      - ./results/ssod/pe_datasets/FT_RO/build_stats.json:
+          cache: false
+
+  build_pe_training_data_FT_GD_RO:
+    # FT + DINO intermedia + Rex intermedia. Zonas de exclusión: FT + RO (DINO non).
+    cmd: python -m src.ssod.build_pe_dataset
+      --labeled_ann_file ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      --unlabeled_ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json ./results/pe_policies/dino_intermediate/detection_results.json ./results/pe_policies/rex_intermediate/detection_results.json
+      --exclusion_zones ./results/pe_policies/FT/exclusion_zones.json ./results/pe_policies/rex_intermediate/exclusion_zones.json
+      --output_ann_file ./results/ssod/pe_datasets/FT_GD_RO/COCO_annotations.json
+      --output_stats_file ./results/ssod/pe_datasets/FT_GD_RO/build_stats.json
+    deps:
+      - src/ssod/build_pe_dataset.py
+      - ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      - ./results/pe_policies/FT/detection_results.json
+      - ./results/pe_policies/FT/exclusion_zones.json
+      - ./results/pe_policies/dino_intermediate/detection_results.json
+      - ./results/pe_policies/rex_intermediate/detection_results.json
+      - ./results/pe_policies/rex_intermediate/exclusion_zones.json
+    params:
+      - ssod.pe_dataset_drop_empty_unlabeled
+    outs:
+      - ./results/ssod/pe_datasets/FT_GD_RO/COCO_annotations.json
+    metrics:
+      - ./results/ssod/pe_datasets/FT_GD_RO/build_stats.json:
+          cache: false
+
+  build_pe_training_data_FT_GD_noens:
+    # FT + DINO sen ensembling. Zonas de exclusión: só FT.
+    cmd: python -m src.ssod.build_pe_dataset
+      --labeled_ann_file ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      --unlabeled_ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json ./results/pe_policies/GD_noens/detection_results.json
+      --exclusion_zones ./results/pe_policies/FT/exclusion_zones.json
+      --output_ann_file ./results/ssod/pe_datasets/FT_GD_noens/COCO_annotations.json
+      --output_stats_file ./results/ssod/pe_datasets/FT_GD_noens/build_stats.json
+    deps:
+      - src/ssod/build_pe_dataset.py
+      - ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      - ./results/pe_policies/FT/detection_results.json
+      - ./results/pe_policies/FT/exclusion_zones.json
+      - ./results/pe_policies/GD_noens/detection_results.json
+    params:
+      - ssod.pe_dataset_drop_empty_unlabeled
+    outs:
+      - ./results/ssod/pe_datasets/FT_GD_noens/COCO_annotations.json
+    metrics:
+      - ./results/ssod/pe_datasets/FT_GD_noens/build_stats.json:
+          cache: false
+
+  build_pe_training_data_FT_RO_noens:
+    # FT + Rex sen ensembling. Zonas de exclusión: FT + RO_noens.
+    cmd: python -m src.ssod.build_pe_dataset
+      --labeled_ann_file ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      --unlabeled_ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json ./results/pe_policies/RO_noens/detection_results.json
+      --exclusion_zones ./results/pe_policies/FT/exclusion_zones.json ./results/pe_policies/RO_noens/exclusion_zones.json
+      --output_ann_file ./results/ssod/pe_datasets/FT_RO_noens/COCO_annotations.json
+      --output_stats_file ./results/ssod/pe_datasets/FT_RO_noens/build_stats.json
+    deps:
+      - src/ssod/build_pe_dataset.py
+      - ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      - ./results/pe_policies/FT/detection_results.json
+      - ./results/pe_policies/FT/exclusion_zones.json
+      - ./results/pe_policies/RO_noens/detection_results.json
+      - ./results/pe_policies/RO_noens/exclusion_zones.json
+    params:
+      - ssod.pe_dataset_drop_empty_unlabeled
+    outs:
+      - ./results/ssod/pe_datasets/FT_RO_noens/COCO_annotations.json
+    metrics:
+      - ./results/ssod/pe_datasets/FT_RO_noens/build_stats.json:
+          cache: false
+
+  build_pe_training_data_FT_GD_RO_noens:
+    # FT + DINO + Rex, todos sen ensembling. Zonas de exclusión: FT + RO_noens (DINO non).
+    cmd: python -m src.ssod.build_pe_dataset
+      --labeled_ann_file ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      --unlabeled_ann_file ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json ./results/pe_policies/GD_noens/detection_results.json ./results/pe_policies/RO_noens/detection_results.json
+      --exclusion_zones ./results/pe_policies/FT/exclusion_zones.json ./results/pe_policies/RO_noens/exclusion_zones.json
+      --output_ann_file ./results/ssod/pe_datasets/FT_GD_RO_noens/COCO_annotations.json
+      --output_stats_file ./results/ssod/pe_datasets/FT_GD_RO_noens/build_stats.json
+    deps:
+      - src/ssod/build_pe_dataset.py
+      - ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      - ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      - ./results/pe_policies/FT/detection_results.json
+      - ./results/pe_policies/FT/exclusion_zones.json
+      - ./results/pe_policies/GD_noens/detection_results.json
+      - ./results/pe_policies/RO_noens/detection_results.json
+      - ./results/pe_policies/RO_noens/exclusion_zones.json
+    params:
+      - ssod.pe_dataset_drop_empty_unlabeled
+    outs:
+      - ./results/ssod/pe_datasets/FT_GD_RO_noens/COCO_annotations.json
+    metrics:
+      - ./results/ssod/pe_datasets/FT_GD_RO_noens/build_stats.json:
+          cache: false
+
+  train_ssod_pe:
+    foreach:
+      - FT
+      - GD
+      - RO
+      - FT_GD
+      - FT_RO
+      - FT_GD_RO
+      - FT_GD_noens
+      - FT_RO_noens
+      - FT_GD_RO_noens
+    do:
+      cmd: python -m src.training.train
+        --config_file ${training.model_config}
+        --train_img_folder ./results/preprocess/tile_images
+        --train_ann_file ./results/ssod/pe_datasets/${item}/COCO_annotations.json
+        --val_img_folder ./results/preprocess/tile_images/val/images/
+        --val_ann_file ./results/preprocess/tile_images/val/COCO_annotations.json
+        --output_dir ./results/models/ssod_pe/${item}/
+        --seed ${training.seed}
+        --num_epochs ${training_ssod_pe.num_epochs}
+        --batch_size ${training.batch_size}
+        --accumulation_steps ${training.accumulation_steps}
+        --num_workers ${training.num_workers}
+        --learning_rate ${training_ssod_pe.learning_rate}
+        --num_classes ${training.num_classes}
+        --lr_milestones ${training_ssod_pe.lr_milestones}
+        --lr_gamma ${training_ssod_pe.lr_gamma}
+        --save_every ${training_ssod_pe.save_every}
+        --keep_last_n ${training_ssod_pe.keep_last_n}
+        --eval_every ${training_ssod_pe.eval_every}
+        --device ${training.device}
+        --focal_loss ${training_ssod_pe.focal_loss}
+        --warmup_epochs ${training_ssod_pe.warmup_epochs}
+        --log_every_train ${training_ssod_pe.log_every_train}
+        --log_every_eval ${training_ssod_pe.log_every_eval}
+        --train_empty_fraction ${training_ssod_pe.train_empty_fraction}
+        --augment
+        --exclusion_iou_thresh 0.3
+      deps:
+        - src/training/train.py
+        - src/utils/exclusion_zones.py
+        - ${training.model_config}
+        - ./results/ssod/pe_datasets/${item}/COCO_annotations.json
+        - ./results/preprocess/tile_images/train_sampled/images/
+        - ./results/preprocess/tile_images/train_unlabeled_eval/images/
+        - ./results/preprocess/tile_images/val/images/
+        - ./results/preprocess/tile_images/val/COCO_annotations.json
+      params:
+        - training.model_config
+        - training.seed
+        - training.batch_size
+        - training.accumulation_steps
+        - training.num_workers
+        - training.num_classes
+        - training.device
+        - training_ssod_pe.num_epochs
+        - training_ssod_pe.learning_rate
+        - training_ssod_pe.lr_milestones
+        - training_ssod_pe.lr_gamma
+        - training_ssod_pe.save_every
+        - training_ssod_pe.keep_last_n
+        - training_ssod_pe.eval_every
+        - training_ssod_pe.focal_loss
+        - training_ssod_pe.warmup_epochs
+        - training_ssod_pe.log_every_train
+        - training_ssod_pe.log_every_eval
+        - training_ssod_pe.train_empty_fraction
+      outs:
+        - ./results/models/ssod_pe/${item}/fasterrcnn_best.pth:
+            persist: true
+        - ./results/models/ssod_pe/${item}/train.log:
+            persist: true
+
+  evaluate_ssod_pe:
+    foreach:
+      - FT
+      - GD
+      - RO
+      - FT_GD
+      - FT_RO
+      - FT_GD_RO
+      - FT_GD_noens
+      - FT_RO_noens
+      - FT_GD_RO_noens
+    do:
+      cmd: python -m src.inference.torvis_detection_inference
+        --model_config_file ${training.model_config}
+        --model_checkpoint ./results/models/ssod_pe/${item}/fasterrcnn_best.pth
+        --img_dir ./results/preprocess/tile_images/test/images/
+        --ann_file ./results/preprocess/tile_images/test/COCO_annotations.json
+        --output_folder ./results/inference_test_ssod_pe/${item}/
+        --batch_size ${evaluation.batch_size}
+      deps:
+        - src/inference/torvis_detection_inference.py
+        - ${training.model_config}
+        - ./results/models/ssod_pe/${item}/fasterrcnn_best.pth
+        - ./results/preprocess/tile_images/test/images/
+        - ./results/preprocess/tile_images/test/COCO_annotations.json
+      params:
+        - training.model_config
+        - evaluation.batch_size
+      metrics:
+        - ./results/inference_test_ssod_pe/${item}/metrics.json:
+            cache: false
+
+  generate_pe_comparison_table:
+    cmd: python -m src.ssod.generate_pe_comparison_table
+      --baseline_metrics ./results/inference_test_ssod_baseline/metrics.json
+      --pe_metrics
+        FT:./results/inference_test_ssod_pe/FT/metrics.json
+        GD:./results/inference_test_ssod_pe/GD/metrics.json
+        RO:./results/inference_test_ssod_pe/RO/metrics.json
+        FT_GD:./results/inference_test_ssod_pe/FT_GD/metrics.json
+        FT_RO:./results/inference_test_ssod_pe/FT_RO/metrics.json
+        FT_GD_RO:./results/inference_test_ssod_pe/FT_GD_RO/metrics.json
+        FT_GD_noens:./results/inference_test_ssod_pe/FT_GD_noens/metrics.json
+        FT_RO_noens:./results/inference_test_ssod_pe/FT_RO_noens/metrics.json
+        FT_GD_RO_noens:./results/inference_test_ssod_pe/FT_GD_RO_noens/metrics.json
+      --output_csv ./results/ssod/comparison_table.csv
+      --output_chart ./docs/charts_ssod_pe/comparison_bar_chart.png
+    deps:
+      - src/ssod/generate_pe_comparison_table.py
+      - ./results/inference_test_ssod_baseline/metrics.json
+      - ./results/inference_test_ssod_pe/FT/metrics.json
+      - ./results/inference_test_ssod_pe/GD/metrics.json
+      - ./results/inference_test_ssod_pe/RO/metrics.json
+      - ./results/inference_test_ssod_pe/FT_GD/metrics.json
+      - ./results/inference_test_ssod_pe/FT_RO/metrics.json
+      - ./results/inference_test_ssod_pe/FT_GD_RO/metrics.json
+      - ./results/inference_test_ssod_pe/FT_GD_noens/metrics.json
+      - ./results/inference_test_ssod_pe/FT_RO_noens/metrics.json
+      - ./results/inference_test_ssod_pe/FT_GD_RO_noens/metrics.json
+    outs:
+      - ./results/ssod/comparison_table.csv
+      - ./docs/charts_ssod_pe/comparison_bar_chart.png
+
+  # ─── Curva supervisada 10/20/30 % (cota inferior; 10 % = ssod_baseline) ─────
+  preprocess_sample_curve:
+    cmd: python -m src.preprocessing.sample_coco_stratified
+      ./results/preprocess/split/xview_train.json
+      ./results/preprocess/split/curve/xview_curve.json
+      ./results/preprocess/split/curve/xview_curve_unlabeled.json
+      --ratio ${preprocessing.train_sample_ratio}
+      --seed ${preprocessing.sample_seed}
+      --iters ${preprocessing.sample_iters}
+      --nested_ratios ${supervised_curve.ratios}
+    deps:
+      - src/preprocessing/sample_coco_stratified.py
+      - ./results/preprocess/split/xview_train.json
+    params:
+      - preprocessing.train_sample_ratio
+      - preprocessing.sample_seed
+      - preprocessing.sample_iters
+      - supervised_curve.ratios
+    outs:
+      - ./results/preprocess/split/curve/xview_curve_20.json
+      - ./results/preprocess/split/curve/xview_curve_30.json
+
+  preprocess_tile_curve:
+    foreach:
+      - "20"
+      - "30"
+    do:
+      cmd: python -m src.preprocessing.coco_tiling
+        ${xview.extracted_data_path}/train_images
+        ./results/preprocess/split/curve/xview_curve_${item}.json
+        ./results/preprocess/tile_images/curve_${item}
+        --tile_width=${preprocessing.tile_width}
+        --tile_height=${preprocessing.tile_height}
+        --min_tile_width=${preprocessing.min_tile_width}
+        --min_tile_height=${preprocessing.min_tile_height}
+        --min_visibility=${preprocessing.min_visibility}
+        --report_file docs/dataset_reports/tile_filter_curve_${item}_report.json
+      deps:
+        - src/preprocessing/coco_tiling.py
+        - ${xview.extracted_data_path}/train_images
+        - ./results/preprocess/split/curve/xview_curve_${item}.json
+      params:
+        - preprocessing.tile_width
+        - preprocessing.tile_height
+        - preprocessing.min_tile_width
+        - preprocessing.min_tile_height
+        - preprocessing.min_visibility
+      outs:
+        - ./results/preprocess/tile_images/curve_${item}/images/
+        - ./results/preprocess/tile_images/curve_${item}/COCO_annotations.json
+
+  train_supervised_curve:
+    foreach:
+      - "20"
+      - "30"
+    do:
+      cmd: python -m src.training.train
+        --config_file ${training.model_config}
+        --train_img_folder ./results/preprocess/tile_images/curve_${item}/images/
+        --train_ann_file ./results/preprocess/tile_images/curve_${item}/COCO_annotations.json
+        --val_img_folder ./results/preprocess/tile_images/val/images/
+        --val_ann_file ./results/preprocess/tile_images/val/COCO_annotations.json
+        --output_dir ./results/models/supervised_curve/r${item}/
+        --seed ${training.seed}
+        --num_epochs ${training_ssod_baseline.num_epochs}
+        --batch_size ${training.batch_size}
+        --accumulation_steps ${training.accumulation_steps}
+        --num_workers ${training.num_workers}
+        --learning_rate ${training_ssod_baseline.learning_rate}
+        --num_classes ${training.num_classes}
+        --lr_milestones ${training_ssod_baseline.lr_milestones}
+        --lr_gamma ${training_ssod_baseline.lr_gamma}
+        --save_every ${training_ssod_baseline.save_every}
+        --keep_last_n ${training_ssod_baseline.keep_last_n}
+        --eval_every ${training_ssod_baseline.eval_every}
+        --device ${training.device}
+        --focal_loss ${training_ssod_baseline.focal_loss}
+        --warmup_epochs ${training_ssod_baseline.warmup_epochs}
+        --log_every_train ${training_ssod_baseline.log_every_train}
+        --log_every_eval ${training_ssod_baseline.log_every_eval}
+        --train_empty_fraction ${training_ssod_baseline.train_empty_fraction}
+        --augment
+      deps:
+        - src/training/train.py
+        - ${training.model_config}
+        - ./results/preprocess/tile_images/curve_${item}/images/
+        - ./results/preprocess/tile_images/curve_${item}/COCO_annotations.json
+        - ./results/preprocess/tile_images/val/images/
+        - ./results/preprocess/tile_images/val/COCO_annotations.json
+      params:
+        - training.model_config
+        - training.seed
+        - training.batch_size
+        - training.accumulation_steps
+        - training.num_workers
+        - training.num_classes
+        - training_ssod_baseline.num_epochs
+        - training_ssod_baseline.learning_rate
+        - training_ssod_baseline.lr_milestones
+        - training_ssod_baseline.lr_gamma
+        - training_ssod_baseline.warmup_epochs
+        - training_ssod_baseline.focal_loss
+        - training_ssod_baseline.train_empty_fraction
+      outs:
+        - ./results/models/supervised_curve/r${item}/fasterrcnn_best.pth
+        - ./results/models/supervised_curve/r${item}/train.log
+
+  evaluate_supervised_curve:
+    foreach:
+      - "20"
+      - "30"
+    do:
+      cmd: python -m src.inference.torvis_detection_inference
+        --model_config_file ${training.model_config}
+        --model_checkpoint ./results/models/supervised_curve/r${item}/fasterrcnn_best.pth
+        --img_dir ./results/preprocess/tile_images/test/images/
+        --ann_file ./results/preprocess/tile_images/test/COCO_annotations.json
+        --output_folder ./results/inference_test_supervised_curve/r${item}/
+        --batch_size ${evaluation.batch_size}
+      deps:
+        - src/inference/torvis_detection_inference.py
+        - ${training.model_config}
+        - ./results/models/supervised_curve/r${item}/fasterrcnn_best.pth
+        - ./results/preprocess/tile_images/test/images/
+        - ./results/preprocess/tile_images/test/COCO_annotations.json
+      params:
+        - training.model_config
+        - evaluation.batch_size
+      metrics:
+        - ./results/inference_test_supervised_curve/r${item}/metrics.json:
+            cache: false

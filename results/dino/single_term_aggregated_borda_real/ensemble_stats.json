@@ -1,0 +1,11 @@
+{
+  "model": "dino",
+  "raw_detections": 4820906,
+  "merged_clusters": 1448304,
+  "images_with_detections": 9880,
+  "cluster_size_mean": 2.7907,
+  "cluster_size_max": 647,
+  "singletons": 673292,
+  "loc_uncertainty_mean": 1.7314,
+  "class_uncertainty_mean": 0.2262
+}

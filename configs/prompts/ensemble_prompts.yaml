@@ -1,0 +1,118 @@
+version: 1
+iou_cluster: 0.4
+
+# Three prompt sets with different formulation styles.
+# Each set is run as one inference pass (or auto-split for DINO token limit).
+# Keys are macro-class names; values are the phrases used for that class in this set.
+
+prompt_sets:
+
+  simple:
+    Aircraft:           [Aircraft]
+    Building:           [Building]
+    Engineering Vehicle: [Engineering Vehicle]
+    Heavy Vehicle:      [Heavy Vehicle]
+    Light Vehicle:      [Light Vehicle]
+    Maritime Vessel:    [Maritime Vessel]
+    Railway Vehicle:    [Railway Vehicle]
+    Storage Tank:       [Storage Tank]
+    Tower & Pylon:      [Tower & Pylon]
+
+  aerial_compact:
+    Aircraft:           [aerial view of aircraft]
+    Building:           [aerial view of building]
+    Engineering Vehicle: [aerial view of construction vehicle]
+    Heavy Vehicle:      [aerial view of truck]
+    Light Vehicle:      [aerial view of car]
+    Maritime Vessel:    [aerial view of ship]
+    Railway Vehicle:    [aerial view of train]
+    Storage Tank:       [aerial view of storage tank]
+    Tower & Pylon:      [aerial view of tower]
+
+  satellite_verbose:
+    Aircraft:            [airplane on the ground seen from satellite]
+    Building:            [building rooftop seen from above]
+    Engineering Vehicle: [bulldozer seen from satellite]
+    Heavy Vehicle:       [large vehicle seen from satellite]
+    Light Vehicle:       [small car seen from above]
+    Maritime Vessel:     [ship seen from above]
+    Railway Vehicle:     [train seen from above]
+    Storage Tank:        [circular storage tank seen from satellite]
+    Tower & Pylon:       [tower or pylon seen from above]
+
+  scene_context:
+    Aircraft:            [aircraft on runway or taxiway]
+    Building:            [building in urban or industrial area]
+    Engineering Vehicle: [construction vehicle at work site]
+    Heavy Vehicle:       [heavy truck on road or parking lot]
+    Light Vehicle:       [car in parking lot or street]
+    Maritime Vessel:     [vessel in water]
+    Railway Vehicle:     [train on railroad tracks]
+    Storage Tank:        [cylindrical tank in industrial facility]
+    Tower & Pylon:       [transmission tower in open area]
+
+  original:
+    Aircraft:
+      - fixed-wing aircraft
+      - small aircraft
+      - passenger plane
+      - cargo plane
+      - helicopter
+    Building:
+      - building
+      - aircraft hangar
+      - damaged building
+      - facility
+      - hut
+      - tent
+      - shed
+    Engineering Vehicle:
+      - engineering vehicle
+      - reach stacker
+      - straddle carrier
+      - dump truck
+      - haul truck
+      - scraper
+      - tractor
+      - front loader
+      - bulldozer
+      - excavator
+      - cement mixer
+      - ground grader
+    Heavy Vehicle:
+      - bus
+      - truck
+      - cargo truck
+      - truck tractor with box trailer
+      - truck tractor
+      - trailer
+      - truck tractor with flatbed trailer
+      - truck tractor with liquid tank
+      - crane truck
+    Light Vehicle:
+      - passenger vehicle
+      - small car
+      - pickup truck
+    Maritime Vessel:
+      - motorboat
+      - sailboat
+      - tugboat
+      - barge
+      - fishing vessel
+      - ferry
+      - yacht
+      - container ship
+      - oil tanker
+    Railway Vehicle:
+      - railway vehicle
+      - passenger train car
+      - cargo train car
+      - container train car
+      - flat train car
+      - tank train car
+      - locomotive
+    Storage Tank:
+      - storage tank
+    Tower & Pylon:
+      - pylon
+      - tower

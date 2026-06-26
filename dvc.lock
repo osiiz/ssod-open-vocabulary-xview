@@ -1,0 +1,3150 @@
+schema: '2.0'
+stages:
+  preprocess_convert_to_coco:
+    cmd: python -m src.preprocessing.xView_to_coco xView 
+      ./results/preprocess/convert_to_coco 
+      --class_map_path=xView/xView_macro_classes.json --erroneous_type_ids 75 82
+      --missing_image_ids 1395.tif
+    deps:
+    - path: src/preprocessing/xView_to_coco.py
+      hash: md5
+      md5: a714fee85ae7c256070ce4eeca266268
+      size: 8411
+    - path: xView/train_images
+      hash: md5
+      md5: 36d85084ea1ece675a9de5b4e73c73cd.dir
+      size: 24678282984
+      nfiles: 849
+    - path: xView/xView_macro_classes.json
+      hash: md5
+      md5: c1b7c627fd1b2deb32cd3f7aa16ddd1d
+      size: 2331
+    - path: xView/xView_train.geojson
+      hash: md5
+      md5: 4a583147254201627285633c11cb600d
+      size: 372241031
+    params:
+      params.yaml:
+        preprocessing.erroneous_type_ids: 75 82
+        preprocessing.missing_image_ids: 1395.tif
+    outs:
+    - path: ./results/preprocess/convert_to_coco/COCO_annotations.json
+      hash: md5
+      md5: 1224aa9b94e2304dcde0c240f9ed26bd
+      size: 120706502
+    - path: ./results/preprocess/convert_to_coco/xView_class_map.json
+      hash: md5
+      md5: a8e78669123dbadde662d897721f1c3b
+      size: 217
+  preprocess_validate_coco_boxes:
+    cmd: python -m src.preprocessing.validate_coco_boxes 
+      ./results/preprocess/convert_to_coco/COCO_annotations.json 
+      ./results/preprocess/convert_to_coco/COCO_full_annotations.json 
+      --report_file docs/dataset_reports/invalid_boxes_report.json
+    deps:
+    - path: ./results/preprocess/convert_to_coco/COCO_annotations.json
+      hash: md5
+      md5: 1224aa9b94e2304dcde0c240f9ed26bd
+      size: 120706502
+    - path: src/preprocessing/validate_coco_boxes.py
+      hash: md5
+      md5: ab4d0a47ac784a37b1091914426a07f8
+      size: 4589
+    outs:
+    - path: ./results/preprocess/convert_to_coco/COCO_full_annotations.json
+      hash: md5
+      md5: 1224aa9b94e2304dcde0c240f9ed26bd
+      size: 120706502
+    - path: docs/dataset_reports/invalid_boxes_report.json
+      hash: md5
+      md5: 1c15dea0c911b31a1587b2e842b7391d
+      size: 434
+  dataset_statistics_original:
+    cmd: python -m src.utils.dataset_statistics 
+      ./results/preprocess/convert_to_coco/COCO_full_annotations.json --img_dir 
+      xView/train_images --out_file 
+      docs/dataset_reports/xview_original_stats.json
+    deps:
+    - path: ./results/preprocess/convert_to_coco/COCO_full_annotations.json
+      hash: md5
+      md5: 1224aa9b94e2304dcde0c240f9ed26bd
+      size: 120706502
+    - path: src/utils/dataset_statistics.py
+      hash: md5
+      md5: 50a8793015e2f0b6d885c76a34a56850
+      size: 4256
+    - path: xView/train_images
+      hash: md5
+      md5: 36d85084ea1ece675a9de5b4e73c73cd.dir
+      size: 24678282984
+      nfiles: 849
+    outs:
+    - path: docs/dataset_reports/xview_original_stats.json
+      hash: md5
+      md5: 202b18aa59806ff3386a92b0ff6eb485
+      size: 1437
+  preprocess_split:
+    cmd: python -m src.preprocessing.split_coco 
+      ./results/preprocess/convert_to_coco/COCO_full_annotations.json 
+      ./results/preprocess/split --seed 1773160924 --ratios 0.7 0.1 0.2
+    deps:
+    - path: ./results/preprocess/convert_to_coco/COCO_full_annotations.json
+      hash: md5
+      md5: 1224aa9b94e2304dcde0c240f9ed26bd
+      size: 120706502
+    - path: src/preprocessing/split_coco.py
+      hash: md5
+      md5: e3cfe4765499ff5f877db40d7ce1011a
+      size: 6179
+    params:
+      params.yaml:
+        preprocessing.split_ratios: 0.7 0.1 0.2
+        preprocessing.split_seed: 1773160924
+    outs:
+    - path: ./results/preprocess/split/xview_test.json
+      hash: md5
+      md5: b8e75ea0bb192a2fee7976c8f0d4dc45
+      size: 13944975
+    - path: ./results/preprocess/split/xview_train.json
+      hash: md5
+      md5: 0abf3eff66d3797ae1761b96521807de
+      size: 48863257
+    - path: ./results/preprocess/split/xview_val.json
+      hash: md5
+      md5: 10325a7593488ac5ad508539b4097235
+      size: 7007302
+  preprocess_sample_stratified:
+    cmd: python -m src.preprocessing.sample_coco_stratified 
+      ./results/preprocess/split/xview_train.json 
+      ./results/preprocess/split/xview_train_sampled.json 
+      ./results/preprocess/split/xview_train_unlabeled.json --ratio 0.1 --seed 
+      1623175845 --iters 3000 --nested_ratios 0.10
+    deps:
+    - path: ./results/preprocess/split/xview_train.json
+      hash: md5
+      md5: 0abf3eff66d3797ae1761b96521807de
+      size: 48863257
+    - path: src/preprocessing/sample_coco_stratified.py
+      hash: md5
+      md5: e83910c5400115eefd1ea349cc802eb8
+      size: 11425
+    params:
+      params.yaml:
+        preprocessing.sample_iters: 3000
+        preprocessing.sample_nested_ratios: '0.10'
+        preprocessing.sample_seed: 1623175845
+        preprocessing.train_sample_ratio: 0.1
+        preprocessing.unlabeled_sample_ratio: 0.9
+        preprocessing.unlabeled_tag: r90
+    outs:
+    - path: ./results/preprocess/split/xview_train_sampled.json
+      hash: md5
+      md5: d510cc857aa48cc1105d382f275f48e8
+      size: 4888921
+    - path: ./results/preprocess/split/xview_train_unlabeled.json
+      hash: md5
+      md5: 0d8b35b608b3e4806ef3f0d32a2a70f1
+      size: 33412
+  preprocess_tile_images@train:
+    cmd: python -m src.preprocessing.coco_tiling xView/train_images 
+      ./results/preprocess/split/xview_train.json 
+      ./results/preprocess/tile_images/train --tile_width=700 --tile_height=700 
+      --min_tile_width=300 --min_tile_height=300 --min_visibility=0.3 
+      --report_file docs/dataset_reports/tile_filter_train_report.json
+    deps:
+    - path: ./results/preprocess/split/xview_train.json
+      hash: md5
+      md5: 0abf3eff66d3797ae1761b96521807de
+      size: 48863257
+    - path: src/preprocessing/coco_tiling.py
+      hash: md5
+      md5: 7fd243ad7ca57ce8d678cd3930bee23e
+      size: 12537
+    - path: xView/train_images
+      hash: md5
+      md5: 36d85084ea1ece675a9de5b4e73c73cd.dir
+      size: 24678282984
+      nfiles: 849
+    params:
+      params.yaml:
+        preprocessing.min_tile_height: 300
+        preprocessing.min_tile_width: 300
+        preprocessing.min_visibility: 0.3
+        preprocessing.tile_height: 700
+        preprocessing.tile_width: 700
+    outs:
+    - path: ./results/preprocess/tile_images/train/COCO_annotations.json
+      hash: md5
+      md5: f627681aa6808cb515bc621db55aa0ba
+      size: 85562367
+    - path: ./results/preprocess/tile_images/train/images/
+      hash: md5
+      md5: 1a478282526473d378a3a5cfbaddd0e9.dir
+      size: 15032591252
+      nfiles: 11024
+    - path: docs/dataset_reports/tile_filter_train_report.json
+      hash: md5
+      md5: 1c89877b445ac787f47c7c42691077bb
+      size: 664
+  preprocess_tile_images@train_sampled:
+    cmd: python -m src.preprocessing.coco_tiling xView/train_images 
+      ./results/preprocess/split/xview_train_sampled.json 
+      ./results/preprocess/tile_images/train_sampled --tile_width=700 
+      --tile_height=700 --min_tile_width=300 --min_tile_height=300 
+      --min_visibility=0.3 --report_file 
+      docs/dataset_reports/tile_filter_train_sampled_report.json
+    deps:
+    - path: ./results/preprocess/split/xview_train_sampled.json
+      hash: md5
+      md5: d510cc857aa48cc1105d382f275f48e8
+      size: 4888921
+    - path: src/preprocessing/coco_tiling.py
+      hash: md5
+      md5: 7fd243ad7ca57ce8d678cd3930bee23e
+      size: 12537
+    - path: xView/train_images
+      hash: md5
+      md5: 36d85084ea1ece675a9de5b4e73c73cd.dir
+      size: 24678282984
+      nfiles: 849
+    params:
+      params.yaml:
+        preprocessing.min_tile_height: 300
+        preprocessing.min_tile_width: 300
+        preprocessing.min_visibility: 0.3
+        preprocessing.tile_height: 700
+        preprocessing.tile_width: 700
+    outs:
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: docs/dataset_reports/tile_filter_train_sampled_report.json
+      hash: md5
+      md5: f863aa9cef5d8b847891cb390a968269
+      size: 674
+  preprocess_tile_images@val:
+    cmd: python -m src.preprocessing.coco_tiling xView/train_images 
+      ./results/preprocess/split/xview_val.json 
+      ./results/preprocess/tile_images/val --tile_width=700 --tile_height=700 
+      --min_tile_width=300 --min_tile_height=300 --min_visibility=0.3 
+      --report_file docs/dataset_reports/tile_filter_val_report.json
+    deps:
+    - path: ./results/preprocess/split/xview_val.json
+      hash: md5
+      md5: 10325a7593488ac5ad508539b4097235
+      size: 7007302
+    - path: src/preprocessing/coco_tiling.py
+      hash: md5
+      md5: 7fd243ad7ca57ce8d678cd3930bee23e
+      size: 12537
+    - path: xView/train_images
+      hash: md5
+      md5: 36d85084ea1ece675a9de5b4e73c73cd.dir
+      size: 24678282984
+      nfiles: 849
+    params:
+      params.yaml:
+        preprocessing.min_tile_height: 300
+        preprocessing.min_tile_width: 300
+        preprocessing.min_visibility: 0.3
+        preprocessing.tile_height: 700
+        preprocessing.tile_width: 700
+    outs:
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: docs/dataset_reports/tile_filter_val_report.json
+      hash: md5
+      md5: adc7637eba4f518f88ea6615c351d0ad
+      size: 653
+  preprocess_tile_images@test:
+    cmd: python -m src.preprocessing.coco_tiling xView/train_images 
+      ./results/preprocess/split/xview_test.json 
+      ./results/preprocess/tile_images/test --tile_width=700 --tile_height=700 
+      --min_tile_width=300 --min_tile_height=300 --min_visibility=0.3 
+      --report_file docs/dataset_reports/tile_filter_test_report.json
+    deps:
+    - path: ./results/preprocess/split/xview_test.json
+      hash: md5
+      md5: b8e75ea0bb192a2fee7976c8f0d4dc45
+      size: 13944975
+    - path: src/preprocessing/coco_tiling.py
+      hash: md5
+      md5: 7fd243ad7ca57ce8d678cd3930bee23e
+      size: 12537
+    - path: xView/train_images
+      hash: md5
+      md5: 36d85084ea1ece675a9de5b4e73c73cd.dir
+      size: 24678282984
+      nfiles: 849
+    params:
+      params.yaml:
+        preprocessing.min_tile_height: 300
+        preprocessing.min_tile_width: 300
+        preprocessing.min_visibility: 0.3
+        preprocessing.tile_height: 700
+        preprocessing.tile_width: 700
+    outs:
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: docs/dataset_reports/tile_filter_test_report.json
+      hash: md5
+      md5: e979b53c689d24d97f8d57bbb5c0befb
+      size: 660
+  dataset_statistics_tiled@train:
+    cmd: python -m src.utils.dataset_statistics 
+      ./results/preprocess/tile_images/train/COCO_annotations.json --img_dir 
+      ./results/preprocess/tile_images/train/images/ --out_file 
+      docs/dataset_reports/xview_tiled_train_stats.json
+    deps:
+    - path: ./results/preprocess/tile_images/train/COCO_annotations.json
+      hash: md5
+      md5: f627681aa6808cb515bc621db55aa0ba
+      size: 85562367
+    - path: ./results/preprocess/tile_images/train/images/
+      hash: md5
+      md5: 1a478282526473d378a3a5cfbaddd0e9.dir
+      size: 15032591252
+      nfiles: 11024
+    - path: src/utils/dataset_statistics.py
+      hash: md5
+      md5: 50a8793015e2f0b6d885c76a34a56850
+      size: 4256
+    outs:
+    - path: docs/dataset_reports/xview_tiled_train_stats.json
+      hash: md5
+      md5: aecb349b8ad062b1afc4e53e209914d2
+      size: 1438
+  dataset_statistics_tiled@train_sampled:
+    cmd: python -m src.utils.dataset_statistics 
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json 
+      --img_dir ./results/preprocess/tile_images/train_sampled/images/ 
+      --out_file docs/dataset_reports/xview_tiled_train_sampled_stats.json
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: src/utils/dataset_statistics.py
+      hash: md5
+      md5: 50a8793015e2f0b6d885c76a34a56850
+      size: 4256
+    outs:
+    - path: docs/dataset_reports/xview_tiled_train_sampled_stats.json
+      hash: md5
+      md5: 6271ddf73456f1d06da68b388655e64f
+      size: 1425
+  dataset_statistics_tiled@val:
+    cmd: python -m src.utils.dataset_statistics 
+      ./results/preprocess/tile_images/val/COCO_annotations.json --img_dir 
+      ./results/preprocess/tile_images/val/images/ --out_file 
+      docs/dataset_reports/xview_tiled_val_stats.json
+    deps:
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: src/utils/dataset_statistics.py
+      hash: md5
+      md5: 50a8793015e2f0b6d885c76a34a56850
+      size: 4256
+    outs:
+    - path: docs/dataset_reports/xview_tiled_val_stats.json
+      hash: md5
+      md5: 805da6ef972c5d29299a25c568c0f164
+      size: 1424
+  dataset_statistics_tiled@test:
+    cmd: python -m src.utils.dataset_statistics 
+      ./results/preprocess/tile_images/test/COCO_annotations.json --img_dir 
+      ./results/preprocess/tile_images/test/images/ --out_file 
+      docs/dataset_reports/xview_tiled_test_stats.json
+    deps:
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: src/utils/dataset_statistics.py
+      hash: md5
+      md5: 50a8793015e2f0b6d885c76a34a56850
+      size: 4256
+    outs:
+    - path: docs/dataset_reports/xview_tiled_test_stats.json
+      hash: md5
+      md5: cfb95da2102d5d837dbce12b7f98abb8
+      size: 1428
+  evaluate_splits_distribution:
+    cmd: python -m src.utils.check_splits ./results/preprocess/tile_images 
+      --ratios 0.7 0.1 0.2 --out_file 
+      docs/dataset_reports/split_distribution_metrics.json
+    deps:
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/train/COCO_annotations.json
+      hash: md5
+      md5: f627681aa6808cb515bc621db55aa0ba
+      size: 85562367
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: src/utils/check_splits.py
+      hash: md5
+      md5: 271d65a2cd86dfbc21588f9988147da6
+      size: 3847
+    params:
+      params.yaml:
+        preprocessing.split_ratios: 0.7 0.1 0.2
+    outs:
+    - path: docs/dataset_reports/split_distribution_metrics.json
+      hash: md5
+      md5: 34760fda087377e0d401067d9be4b970
+      size: 2513
+  evaluate_sample_distribution:
+    cmd: python -m src.utils.audit_sample 
+      ./results/preprocess/split/xview_train.json 
+      ./results/preprocess/split/xview_train_sampled.json --out_report 
+      docs/dataset_reports/sample_audit.json
+    deps:
+    - path: ./results/preprocess/split/xview_train.json
+      hash: md5
+      md5: 0abf3eff66d3797ae1761b96521807de
+      size: 48863257
+    - path: ./results/preprocess/split/xview_train_sampled.json
+      hash: md5
+      md5: d510cc857aa48cc1105d382f275f48e8
+      size: 4888921
+    - path: src/utils/audit_sample.py
+      hash: md5
+      md5: 3af1179647092c50a6796fae4ef5e458
+      size: 1934
+    outs:
+    - path: docs/dataset_reports/sample_audit.json
+      hash: md5
+      md5: 07025d7244665e78fc022f93af8a386d
+      size: 1251
+  train_model:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images/train/images/ --train_ann_file 
+      ./results/preprocess/tile_images/train/COCO_annotations.json 
+      --val_img_folder ./results/preprocess/tile_images/val/images/ 
+      --val_ann_file ./results/preprocess/tile_images/val/COCO_annotations.json 
+      --output_dir ./results/models/base/ --seed 42 --num_epochs 100 
+      --batch_size 2 --accumulation_steps 8 --num_workers 8 --learning_rate 0.01
+      --num_classes 10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 
+      --keep_last_n 5 --eval_every 2 --device cuda --focal_loss 0 
+      --warmup_epochs 1 --log_every_train 1000 --log_every_eval 200 
+      --train_empty_fraction 0.0 --augment
+    deps:
+    - path: ./results/preprocess/tile_images/train/COCO_annotations.json
+      hash: md5
+      md5: f627681aa6808cb515bc621db55aa0ba
+      size: 85562367
+    - path: ./results/preprocess/tile_images/train/images/
+      hash: md5
+      md5: 1a478282526473d378a3a5cfbaddd0e9.dir
+      size: 15032591252
+      nfiles: 11024
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.device: cuda
+        training.eval_every: 2
+        training.focal_loss: 0
+        training.keep_last_n: 5
+        training.learning_rate: 0.01
+        training.log_every_eval: 200
+        training.log_every_train: 1000
+        training.lr_gamma: 0.1
+        training.lr_milestones: 50 85
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_epochs: 100
+        training.num_workers: 8
+        training.save_every: 1
+        training.train_empty_fraction: 0.0
+        training.warmup_epochs: 1
+    outs:
+    - path: ./results/models/base/fasterrcnn_best.pth
+      hash: md5
+      md5: 968b489890dcd64c09adc7548056ddd5
+      size: 341252818
+    - path: ./results/models/base/train.log
+      hash: md5
+      md5: 3a257485a6b2ae765947a780df8d3863
+      size: 117993
+  evaluate_model:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/base/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test/ --batch_size 4
+    deps:
+    - path: ./results/models/base/fasterrcnn_best.pth
+      hash: md5
+      md5: 968b489890dcd64c09adc7548056ddd5
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        evaluation.model_checkpoint: ./results/models/base/fasterrcnn_best.pth
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test/metrics.json
+      hash: md5
+      md5: 75424be8fbddd4bb975a662a9605714a
+      size: 248
+  generate_charts:
+    cmd: python -m src.utils.charts.plot_train ./results/models/base/train.log 
+      ./docs/charts/training_loss_vs_map.png --filter_start 2 && python -m 
+      src.utils.charts.plot_ap_per_class 
+      ./results/inference_test/metrics_per_class.json 
+      ./docs/charts/ap_per_class.png && python -m 
+      src.utils.charts.plot_ap_vs_frequency 
+      ./docs/dataset_reports/xview_tiled_train_stats.json 
+      ./results/inference_test/metrics_per_class.json 
+      ./docs/charts/ap_correlation.png && python -m 
+      src.utils.charts.plot_class_distribution 
+      ./docs/dataset_reports/xview_tiled_train_stats.json 
+      ./docs/dataset_reports/xview_tiled_val_stats.json 
+      ./docs/charts/class_distribution.png && python -m 
+      src.utils.charts.plot_split_deviation 
+      ./docs/dataset_reports/split_distribution_metrics.json 
+      ./docs/charts/split_deviation_audit.png && python -m 
+      src.utils.charts.plot_confusion_matrix --gt_json 
+      ./results/preprocess/tile_images/test/COCO_annotations.json --dt_json 
+      ./results/inference_test/detection_results.json --out_png 
+      ./docs/charts/confusion_matrix.png --score_thresh 0.3 --iou_thresh 0.3
+    deps:
+    - path: ./docs/dataset_reports/split_distribution_metrics.json
+      hash: md5
+      md5: 34760fda087377e0d401067d9be4b970
+      size: 2513
+    - path: ./docs/dataset_reports/xview_tiled_train_stats.json
+      hash: md5
+      md5: aecb349b8ad062b1afc4e53e209914d2
+      size: 1438
+    - path: ./docs/dataset_reports/xview_tiled_val_stats.json
+      hash: md5
+      md5: 805da6ef972c5d29299a25c568c0f164
+      size: 1424
+    - path: ./results/inference_test/detection_results.json
+      hash: md5
+      md5: 4cf6c689d7abe936c90158ec43d24c0d
+      size: 53763001
+    - path: ./results/inference_test/metrics_per_class.json
+      hash: md5
+      md5: 3bad9b6f6fafe6150caac285f390a18c
+      size: 262
+    - path: ./results/models/base/train.log
+      hash: md5
+      md5: 3a257485a6b2ae765947a780df8d3863
+      size: 117993
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: src/utils/charts/plot_ap_per_class.py
+      hash: md5
+      md5: 949eaf0ae13c411dd1c6758b4699cb7c
+      size: 1790
+    - path: src/utils/charts/plot_ap_vs_frequency.py
+      hash: md5
+      md5: d50c014895f3b37c8cca3a5d8058447a
+      size: 1890
+    - path: src/utils/charts/plot_class_distribution.py
+      hash: md5
+      md5: 42c09464df354316b9cd3524281334b2
+      size: 2715
+    - path: src/utils/charts/plot_confusion_matrix.py
+      hash: md5
+      md5: 4bc19222ff481d19aa01e7b12de06224
+      size: 8838
+    - path: src/utils/charts/plot_split_deviation.py
+      hash: md5
+      md5: 139db09f5cc66845f1b5893e04ea802f
+      size: 2741
+    - path: src/utils/charts/plot_train.py
+      hash: md5
+      md5: 507bbeebfd2413c718c853158a1df485
+      size: 12522
+  train_ssod_baseline:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images/train_sampled/images/ --train_ann_file 
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json 
+      --val_img_folder ./results/preprocess/tile_images/val/images/ 
+      --val_ann_file ./results/preprocess/tile_images/val/COCO_annotations.json 
+      --output_dir ./results/models/ssod_baseline/ --seed 42 --num_epochs 100 
+      --batch_size 2 --accumulation_steps 8 --num_workers 8 --learning_rate 0.01
+      --num_classes 10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 
+      --keep_last_n 5 --eval_every 2 --device cuda --focal_loss 0 
+      --warmup_epochs 1 --log_every_train 100 --log_every_eval 200 
+      --train_empty_fraction 0.0 --augment
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.device: cuda
+        training.focal_loss: 0
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training_ssod_baseline.eval_every: 2
+        training_ssod_baseline.keep_last_n: 5
+        training_ssod_baseline.learning_rate: 0.01
+        training_ssod_baseline.log_every_eval: 200
+        training_ssod_baseline.log_every_train: 100
+        training_ssod_baseline.lr_gamma: 0.1
+        training_ssod_baseline.lr_milestones: 50 85
+        training_ssod_baseline.num_epochs: 100
+        training_ssod_baseline.save_every: 1
+        training_ssod_baseline.train_empty_fraction: 0.0
+        training_ssod_baseline.warmup_epochs: 1
+    outs:
+    - path: ./results/models/ssod_baseline/fasterrcnn_best.pth
+      hash: md5
+      md5: 343d2494c23fed05ddb36f5a7e548457
+      size: 341252818
+    - path: ./results/models/ssod_baseline/train.log
+      hash: md5
+      md5: 5525deed3cc277ad842ec0aa40403273
+      size: 125448
+  evaluate_ssod_baseline:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/ssod_baseline/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_ssod_baseline/ --batch_size 4
+    deps:
+    - path: ./results/models/ssod_baseline/fasterrcnn_best.pth
+      hash: md5
+      md5: 343d2494c23fed05ddb36f5a7e548457
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_ssod_baseline/metrics.json
+      hash: md5
+      md5: edb80421ed9d2920121bba4c101667aa
+      size: 249
+  generate_charts_ssod_baseline:
+    cmd: python -m src.utils.charts.plot_train 
+      ./results/models/ssod_baseline/train.log 
+      ./docs/charts_ssod_baseline/training_loss_vs_map.png --filter_start 2 && 
+      python -m src.utils.charts.plot_ap_per_class 
+      ./results/inference_test_ssod_baseline/metrics_per_class.json 
+      ./docs/charts_ssod_baseline/ap_per_class.png && python -m 
+      src.utils.charts.plot_ap_vs_frequency 
+      ./docs/dataset_reports/xview_tiled_train_sampled_stats.json 
+      ./results/inference_test_ssod_baseline/metrics_per_class.json 
+      ./docs/charts_ssod_baseline/ap_correlation.png && python -m 
+      src.utils.charts.plot_class_distribution 
+      ./docs/dataset_reports/xview_tiled_train_sampled_stats.json 
+      ./docs/dataset_reports/xview_tiled_val_stats.json 
+      ./docs/charts_ssod_baseline/class_distribution.png && python -m 
+      src.utils.charts.plot_sample_audit docs/dataset_reports/sample_audit.json 
+      docs/charts_ssod_baseline/sample_retention_audit.png --ratio 0.1 && python
+      -m src.utils.charts.plot_confusion_matrix --gt_json 
+      ./results/preprocess/tile_images/test/COCO_annotations.json --dt_json 
+      ./results/inference_test_ssod_baseline/detection_results.json --out_png 
+      ./docs/charts_ssod_baseline/confusion_matrix.png --score_thresh 0.3 
+      --iou_thresh 0.3
+    deps:
+    - path: ./docs/dataset_reports/xview_tiled_train_sampled_stats.json
+      hash: md5
+      md5: 6271ddf73456f1d06da68b388655e64f
+      size: 1425
+    - path: ./docs/dataset_reports/xview_tiled_val_stats.json
+      hash: md5
+      md5: 805da6ef972c5d29299a25c568c0f164
+      size: 1424
+    - path: ./results/inference_test_ssod_baseline/detection_results.json
+      hash: md5
+      md5: 1e813dca3ce26cc44100830f4a2b94ce
+      size: 59072278
+    - path: ./results/inference_test_ssod_baseline/metrics_per_class.json
+      hash: md5
+      md5: 8d72d20cb5745379aff9f8230cc38c67
+      size: 256
+    - path: ./results/models/ssod_baseline/train.log
+      hash: md5
+      md5: 5525deed3cc277ad842ec0aa40403273
+      size: 125448
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: docs/dataset_reports/sample_audit.json
+      hash: md5
+      md5: 07025d7244665e78fc022f93af8a386d
+      size: 1251
+    - path: src/utils/charts/plot_ap_per_class.py
+      hash: md5
+      md5: 949eaf0ae13c411dd1c6758b4699cb7c
+      size: 1790
+    - path: src/utils/charts/plot_ap_vs_frequency.py
+      hash: md5
+      md5: d50c014895f3b37c8cca3a5d8058447a
+      size: 1890
+    - path: src/utils/charts/plot_class_distribution.py
+      hash: md5
+      md5: 42c09464df354316b9cd3524281334b2
+      size: 2715
+    - path: src/utils/charts/plot_confusion_matrix.py
+      hash: md5
+      md5: 4bc19222ff481d19aa01e7b12de06224
+      size: 8838
+    - path: src/utils/charts/plot_sample_audit.py
+      hash: md5
+      md5: 17f9b1450d8eee628d21bdbdb983eb44
+      size: 3160
+    - path: src/utils/charts/plot_train.py
+      hash: md5
+      md5: 507bbeebfd2413c718c853158a1df485
+      size: 12522
+    params:
+      params.yaml:
+        preprocessing.train_sample_ratio: 0.1
+  preprocess_build_unlabeled_eval:
+    cmd: python -m src.preprocessing.filter_coco_by_image_ids 
+      ./results/preprocess/split/xview_train.json 
+      ./results/preprocess/split/xview_train_unlabeled.json 
+      ./results/preprocess/split/xview_train_unlabeled_eval.json
+    deps:
+    - path: ./results/preprocess/split/xview_train.json
+      hash: md5
+      md5: 0abf3eff66d3797ae1761b96521807de
+      size: 48863257
+    - path: ./results/preprocess/split/xview_train_unlabeled.json
+      hash: md5
+      md5: 0d8b35b608b3e4806ef3f0d32a2a70f1
+      size: 33412
+    - path: src/preprocessing/filter_coco_by_image_ids.py
+      hash: md5
+      md5: b9869332af7677fa13caa6a8503f9d5f
+      size: 3439
+    outs:
+    - path: ./results/preprocess/split/xview_train_unlabeled_eval.json
+      hash: md5
+      md5: 35b9c6b54c9b664f2487e02ad4967431
+      size: 76026088
+  preprocess_tile_images_unlabeled_eval:
+    cmd: python -m src.preprocessing.coco_tiling xView/train_images 
+      ./results/preprocess/split/xview_train_unlabeled_eval.json 
+      ./results/preprocess/tile_images/train_unlabeled_eval --tile_width=700 
+      --tile_height=700 --min_tile_width=300 --min_tile_height=300 
+      --min_visibility=0.3 --report_file 
+      docs/dataset_reports/tile_filter_train_unlabeled_eval_report.json
+    deps:
+    - path: ./results/preprocess/split/xview_train_unlabeled_eval.json
+      hash: md5
+      md5: 35b9c6b54c9b664f2487e02ad4967431
+      size: 76026088
+    - path: src/preprocessing/coco_tiling.py
+      hash: md5
+      md5: 7fd243ad7ca57ce8d678cd3930bee23e
+      size: 12537
+    - path: xView/train_images
+      hash: md5
+      md5: 36d85084ea1ece675a9de5b4e73c73cd.dir
+      size: 24678282984
+      nfiles: 849
+    params:
+      params.yaml:
+        preprocessing.min_tile_height: 300
+        preprocessing.min_tile_width: 300
+        preprocessing.min_visibility: 0.3
+        preprocessing.tile_height: 700
+        preprocessing.tile_width: 700
+    outs:
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: docs/dataset_reports/tile_filter_train_unlabeled_eval_report.json
+      hash: md5
+      md5: 40f49aaebbba98d14be9fefd3efa3ba6
+      size: 691
+  dino_single_term_inference:
+    cmd: python -m src.inference.dino_ensemble_inference_argmax --img_dir 
+      ./results/preprocess/tile_images/train_unlabeled_eval/images/ --ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --config configs/prompts/single_term_prompts.yaml --output 
+      ./results/dino/single_term_raw/detection_results.json --model_id 
+      IDEA-Research/grounding-dino-base --score_thresh 0.05 --batch_size 8 
+      --device cuda
+    deps:
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: configs/prompts/single_term_prompts.yaml
+      hash: md5
+      md5: 056c3c1f75dcf1c24ad445dffd0ad6c0
+      size: 3411
+    - path: src/inference/dino_ensemble_inference_argmax.py
+      hash: md5
+      md5: 2e05fb3869d770c4fcc05a2fb494aa1e
+      size: 16677
+    - path: src/inference/multi_prompt_ensemble.py
+      hash: md5
+      md5: 6cd173d3d6173a77f924be54db16967f
+      size: 45726
+    params:
+      params.yaml:
+        dino.device: cuda
+        dino.model_id: IDEA-Research/grounding-dino-base
+        dino_single_term.batch_size: 8
+        dino_single_term.score_thresh: 0.05
+    outs:
+    - path: ./results/dino/single_term_raw/detection_results.json
+      hash: md5
+      md5: e53b94522e6f2e578fde1fee4889864c
+      size: 890595713
+  rex_single_term_inference:
+    cmd: python -m src.inference.rex_ensemble_inference --img_dir 
+      ./results/preprocess/tile_images/train_unlabeled_eval/images/ --ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --config configs/prompts/single_term_prompts.yaml --output 
+      ./results/rexomni/single_term_raw/detection_results.json --model_id 
+      IDEA-Research/Rex-Omni --batch_size 4
+    deps:
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: configs/prompts/single_term_prompts.yaml
+      hash: md5
+      md5: 056c3c1f75dcf1c24ad445dffd0ad6c0
+      size: 3411
+    - path: src/inference/multi_prompt_ensemble.py
+      hash: md5
+      md5: 6cd173d3d6173a77f924be54db16967f
+      size: 45726
+    - path: src/inference/rex_ensemble_inference.py
+      hash: md5
+      md5: a2a1323198667cd8a398d2549a0979eb
+      size: 6903
+    params:
+      params.yaml:
+        rex_single_term.batch_size: 4
+        rexomni.model_id: IDEA-Research/Rex-Omni
+    outs:
+    - path: ./results/rexomni/single_term_raw/detection_results.json
+      hash: md5
+      md5: a7527884f3c1e36c6754820f65617271
+      size: 88758773
+  dino_single_term_aggregate_borda:
+    cmd: python -m src.inference.multi_prompt_ensemble --detections 
+      ./results/dino/single_term_raw/detection_results.json --ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --config configs/prompts/single_term_prompts.yaml --mode borda --label_key
+      dino_label --iou_thresh 0.7 --output 
+      ./results/dino/single_term_aggregated_borda_real/detection_results.json
+    deps:
+    - path: ./results/dino/single_term_raw/detection_results.json
+      hash: md5
+      md5: e53b94522e6f2e578fde1fee4889864c
+      size: 890595713
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: configs/prompts/single_term_prompts.yaml
+      hash: md5
+      md5: 056c3c1f75dcf1c24ad445dffd0ad6c0
+      size: 3411
+    - path: src/inference/multi_prompt_ensemble.py
+      hash: md5
+      md5: 6cd173d3d6173a77f924be54db16967f
+      size: 45726
+    params:
+      params.yaml:
+        dino_single_term.iou_thresh: 0.7
+    outs:
+    - path: 
+        ./results/dino/single_term_aggregated_borda_real/detection_results.json
+      hash: md5
+      md5: 2217f1c63754de8326559fc16bd96dae
+      size: 1054637139
+    - path: ./results/dino/single_term_aggregated_borda_real/ensemble_stats.json
+      hash: md5
+      md5: c1040771a2d9fe66de0e8b98e38bf05b
+      size: 266
+  rex_single_term_aggregate_borda:
+    cmd: python -m src.inference.multi_prompt_ensemble --detections 
+      ./results/rexomni/single_term_raw/detection_results.json --ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --config configs/prompts/single_term_prompts.yaml --mode borda --label_key
+      rex_label --iou_thresh 0.7 --output 
+      ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+    deps:
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: ./results/rexomni/single_term_raw/detection_results.json
+      hash: md5
+      md5: a7527884f3c1e36c6754820f65617271
+      size: 88758773
+    - path: configs/prompts/single_term_prompts.yaml
+      hash: md5
+      md5: 056c3c1f75dcf1c24ad445dffd0ad6c0
+      size: 3411
+    - path: src/inference/multi_prompt_ensemble.py
+      hash: md5
+      md5: 6cd173d3d6173a77f924be54db16967f
+      size: 45726
+    params:
+      params.yaml:
+        rex_single_term.iou_thresh: 0.7
+    outs:
+    - path: 
+        ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+      hash: md5
+      md5: 7a61485e40892b1d6b59120d4087863c
+      size: 174039734
+    - path: 
+        ./results/rexomni/single_term_aggregated_borda_real/ensemble_stats.json
+      hash: md5
+      md5: 38e957913eb558631749076f5585f51b
+      size: 263
+  apply_pe_policies:
+    cmd: python scripts/build_combined_pe.py --dino 
+      ./results/dino/single_term_aggregated_borda_real/detection_results.json 
+      --rex 
+      ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+      --output_dir ./results/pe_policies/
+    deps:
+    - path: 
+        ./results/dino/single_term_aggregated_borda_real/detection_results.json
+      hash: md5
+      md5: 2217f1c63754de8326559fc16bd96dae
+      size: 1054637139
+    - path: 
+        ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+      hash: md5
+      md5: 7a61485e40892b1d6b59120d4087863c
+      size: 174039734
+    - path: scripts/build_combined_pe.py
+      hash: md5
+      md5: 60cee8274264bba22108306a3a823c66
+      size: 5211
+    outs:
+    - path: ./results/pe_policies/dino_balanced/detection_results.json
+      hash: md5
+      md5: 57a3b5af16dd5994135669fef3c522dd
+      size: 33036712
+    - path: ./results/pe_policies/dino_conservative/detection_results.json
+      hash: md5
+      md5: e80acc14167faf19510ce08fdc3e717c
+      size: 1253757
+    - path: ./results/pe_policies/dino_intermediate/detection_results.json
+      hash: md5
+      md5: 3cce9f99f7b2d6bd3efadd26e8af0a9e
+      size: 32811087
+    - path: ./results/pe_policies/rex_balanced/detection_results.json
+      hash: md5
+      md5: de1cc0b3293ebd397bb4839dec751828
+      size: 58931337
+    - path: ./results/pe_policies/rex_conservative/detection_results.json
+      hash: md5
+      md5: 10e19306d3dc1ca7a922d7731139a0e2
+      size: 1533572
+    - path: ./results/pe_policies/rex_intermediate/detection_results.json
+      hash: md5
+      md5: 1170cd3f98ef359fa82267c0f3561d64
+      size: 22140100
+  generate_pseudo_labels_faster10:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/ssod_baseline/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/train_unlabeled_eval/images/ --ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --output_folder ./results/ssod/faster10_unlabeled_raw/ --score_thresh 
+      0.001 --batch_size 4
+    deps:
+    - path: ./results/models/ssod_baseline/fasterrcnn_best.pth
+      hash: md5
+      md5: 343d2494c23fed05ddb36f5a7e548457
+      size: 341252818
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        ssod.faster10_inference_score_thresh: 0.001
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/ssod/faster10_unlabeled_raw/detection_results.json
+      hash: md5
+      md5: cc70fcbb550aead69eb34d7309463da1
+      size: 185011610
+  build_pe_policy_FT:
+    cmd: python scripts/build_faster_per_class_rescue.py --raw 
+      ./results/ssod/faster10_unlabeled_raw/detection_results.json --sampled_ann
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json --tau
+      0.7 --min_n 300 --exclusion_low_thresh 0.05 --output 
+      ./results/pe_policies/FT/detection_results.json
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: ./results/ssod/faster10_unlabeled_raw/detection_results.json
+      hash: md5
+      md5: cc70fcbb550aead69eb34d7309463da1
+      size: 185011610
+    - path: scripts/build_faster_per_class_rescue.py
+      hash: md5
+      md5: 29e604b0558de7216743e5fc2addf7fd
+      size: 5395
+    params:
+      params.yaml:
+        pe_policy_ft.exclusion_low_thresh: 0.05
+        pe_policy_ft.min_n: 300
+        pe_policy_ft.tau: 0.7
+    outs:
+    - path: ./results/pe_policies/FT/detection_results.json
+      hash: md5
+      md5: 9148b9b9e3f6b041322c9f7b9fa3b4a8
+      size: 7600036
+    - path: ./results/pe_policies/FT/exclusion_zones.json
+      hash: md5
+      md5: f41be062fdddc779688959f9de052882
+      size: 80167172
+    - path: ./results/pe_policies/FT/policy_stats.json
+      hash: md5
+      md5: 5842129d406fec6e01b119898853c403
+      size: 1090
+  build_rex_exclusion_zones_intermediate:
+    cmd: python scripts/build_rex_exclusion_zones.py --raw_ensemble 
+      ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+      --policy ./results/pe_policies/rex_intermediate/detection_results.json 
+      --output ./results/pe_policies/rex_intermediate/exclusion_zones.json
+    deps:
+    - path: ./results/pe_policies/rex_intermediate/detection_results.json
+      hash: md5
+      md5: 1170cd3f98ef359fa82267c0f3561d64
+      size: 22140100
+    - path: 
+        ./results/rexomni/single_term_aggregated_borda_real/detection_results.json
+      hash: md5
+      md5: 7a61485e40892b1d6b59120d4087863c
+      size: 174039734
+    - path: scripts/build_rex_exclusion_zones.py
+      hash: md5
+      md5: c10921bb5ea39d5611b1bff996dacfaf
+      size: 3620
+    outs:
+    - path: ./results/pe_policies/rex_intermediate/exclusion_zones.json
+      hash: md5
+      md5: e9303775cd06192ceca4c42c5987892d
+      size: 105324332
+  build_pe_policy_GD_noens:
+    cmd: python scripts/build_single_prompt_pe.py --raw_single 
+      ./results/dino/single_term_raw/detection_results.json --prompt_set 
+      set1_direct --ref_policy 
+      ./results/pe_policies/dino_intermediate/detection_results.json 
+      --categories ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --mode score --output 
+      ./results/pe_policies/GD_noens/detection_results.json
+    deps:
+    - path: ./results/dino/single_term_raw/detection_results.json
+      hash: md5
+      md5: e53b94522e6f2e578fde1fee4889864c
+      size: 890595713
+    - path: ./results/pe_policies/dino_intermediate/detection_results.json
+      hash: md5
+      md5: 3cce9f99f7b2d6bd3efadd26e8af0a9e
+      size: 32811087
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: scripts/build_single_prompt_pe.py
+      hash: md5
+      md5: 3578acb450a126de2bd99181d44d52ad
+      size: 4500
+    outs:
+    - path: ./results/pe_policies/GD_noens/detection_results.json
+      hash: md5
+      md5: 00fe9729b9d2853d049f5e5a67ce9dff
+      size: 5233404
+  build_pe_policy_RO_noens:
+    cmd: python scripts/build_single_prompt_pe.py --raw_single 
+      ./results/rexomni/single_term_raw/detection_results.json --prompt_set 
+      set1_direct --ref_policy 
+      ./results/pe_policies/rex_intermediate/detection_results.json --categories
+      ./results/preprocess/tile_images/test/COCO_annotations.json --mode random 
+      --seed 42 --output ./results/pe_policies/RO_noens/detection_results.json 
+      --exclusion_output ./results/pe_policies/RO_noens/exclusion_zones.json
+    deps:
+    - path: ./results/pe_policies/rex_intermediate/detection_results.json
+      hash: md5
+      md5: 1170cd3f98ef359fa82267c0f3561d64
+      size: 22140100
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/rexomni/single_term_raw/detection_results.json
+      hash: md5
+      md5: a7527884f3c1e36c6754820f65617271
+      size: 88758773
+    - path: scripts/build_single_prompt_pe.py
+      hash: md5
+      md5: 3578acb450a126de2bd99181d44d52ad
+      size: 4500
+    params:
+      params.yaml:
+        training.seed: 42
+    outs:
+    - path: ./results/pe_policies/RO_noens/detection_results.json
+      hash: md5
+      md5: a90bce10a9465c672ed31f1d5d546188
+      size: 3851350
+    - path: ./results/pe_policies/RO_noens/exclusion_zones.json
+      hash: md5
+      md5: 7bbc840e9c6f5107926e05f0c517e920
+      size: 10626665
+  build_pe_training_data_FT:
+    cmd: python -m src.ssod.build_pe_dataset --labeled_ann_file 
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json 
+      --unlabeled_ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json 
+      --exclusion_zones ./results/pe_policies/FT/exclusion_zones.json 
+      --output_ann_file ./results/ssod/pe_datasets/FT/COCO_annotations.json 
+      --output_stats_file ./results/ssod/pe_datasets/FT/build_stats.json
+    deps:
+    - path: ./results/pe_policies/FT/detection_results.json
+      hash: md5
+      md5: 9148b9b9e3f6b041322c9f7b9fa3b4a8
+      size: 7600036
+    - path: ./results/pe_policies/FT/exclusion_zones.json
+      hash: md5
+      md5: f41be062fdddc779688959f9de052882
+      size: 80167172
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: src/ssod/build_pe_dataset.py
+      hash: md5
+      md5: ec8ebcb4255676711ecbb38fc61c7a21
+      size: 16675
+    params:
+      params.yaml:
+        ssod.pe_dataset_drop_empty_unlabeled: true
+    outs:
+    - path: ./results/ssod/pe_datasets/FT/COCO_annotations.json
+      hash: md5
+      md5: bc6c8f9928bed49450edd48dcf70d49d
+      size: 118126334
+    - path: ./results/ssod/pe_datasets/FT/build_stats.json
+      hash: md5
+      md5: 7951331ccdb7567901d67873487a3622
+      size: 430
+  build_pe_training_data_GD:
+    cmd: python -m src.ssod.build_pe_dataset --labeled_ann_file 
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json 
+      --unlabeled_ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections 
+      ./results/pe_policies/dino_intermediate/detection_results.json 
+      --output_ann_file ./results/ssod/pe_datasets/GD/COCO_annotations.json 
+      --output_stats_file ./results/ssod/pe_datasets/GD/build_stats.json
+    deps:
+    - path: ./results/pe_policies/dino_intermediate/detection_results.json
+      hash: md5
+      md5: 3cce9f99f7b2d6bd3efadd26e8af0a9e
+      size: 32811087
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: src/ssod/build_pe_dataset.py
+      hash: md5
+      md5: ec8ebcb4255676711ecbb38fc61c7a21
+      size: 16675
+    params:
+      params.yaml:
+        ssod.pe_dataset_drop_empty_unlabeled: true
+    outs:
+    - path: ./results/ssod/pe_datasets/GD/COCO_annotations.json
+      hash: md5
+      md5: 896f44563508c0e8edb2ce02fc1085a3
+      size: 12494806
+    - path: ./results/ssod/pe_datasets/GD/build_stats.json
+      hash: md5
+      md5: 6c046dd5eebf300255c672c1e5b49651
+      size: 388
+  build_pe_training_data_RO:
+    cmd: python -m src.ssod.build_pe_dataset --labeled_ann_file 
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json 
+      --unlabeled_ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/rex_intermediate/detection_results.json
+      --exclusion_zones 
+      ./results/pe_policies/rex_intermediate/exclusion_zones.json 
+      --output_ann_file ./results/ssod/pe_datasets/RO/COCO_annotations.json 
+      --output_stats_file ./results/ssod/pe_datasets/RO/build_stats.json
+    deps:
+    - path: ./results/pe_policies/rex_intermediate/detection_results.json
+      hash: md5
+      md5: 1170cd3f98ef359fa82267c0f3561d64
+      size: 22140100
+    - path: ./results/pe_policies/rex_intermediate/exclusion_zones.json
+      hash: md5
+      md5: e9303775cd06192ceca4c42c5987892d
+      size: 105324332
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: src/ssod/build_pe_dataset.py
+      hash: md5
+      md5: ec8ebcb4255676711ecbb38fc61c7a21
+      size: 16675
+    params:
+      params.yaml:
+        ssod.pe_dataset_drop_empty_unlabeled: true
+    outs:
+    - path: ./results/ssod/pe_datasets/RO/COCO_annotations.json
+      hash: md5
+      md5: 84bc118cd240a2a4e0e7147907723e0b
+      size: 31328633
+    - path: ./results/ssod/pe_datasets/RO/build_stats.json
+      hash: md5
+      md5: a2f0b3ab966c0e4b1d177840fde00830
+      size: 430
+  build_pe_training_data_FT_GD:
+    cmd: python -m src.ssod.build_pe_dataset --labeled_ann_file 
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json 
+      --unlabeled_ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json 
+      ./results/pe_policies/dino_intermediate/detection_results.json 
+      --exclusion_zones ./results/pe_policies/FT/exclusion_zones.json 
+      --output_ann_file ./results/ssod/pe_datasets/FT_GD/COCO_annotations.json 
+      --output_stats_file ./results/ssod/pe_datasets/FT_GD/build_stats.json
+    deps:
+    - path: ./results/pe_policies/FT/detection_results.json
+      hash: md5
+      md5: 9148b9b9e3f6b041322c9f7b9fa3b4a8
+      size: 7600036
+    - path: ./results/pe_policies/FT/exclusion_zones.json
+      hash: md5
+      md5: f41be062fdddc779688959f9de052882
+      size: 80167172
+    - path: ./results/pe_policies/dino_intermediate/detection_results.json
+      hash: md5
+      md5: 3cce9f99f7b2d6bd3efadd26e8af0a9e
+      size: 32811087
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: src/ssod/build_pe_dataset.py
+      hash: md5
+      md5: ec8ebcb4255676711ecbb38fc61c7a21
+      size: 16675
+    params:
+      params.yaml:
+        ssod.pe_dataset_drop_empty_unlabeled: true
+    outs:
+    - path: ./results/ssod/pe_datasets/FT_GD/COCO_annotations.json
+      hash: md5
+      md5: 73f1a9dcaba4878672396e8a65adbe55
+      size: 127083263
+    - path: ./results/ssod/pe_datasets/FT_GD/build_stats.json
+      hash: md5
+      md5: 48bf14bc767d64d47d02f88d688bbb58
+      size: 455
+  build_pe_training_data_FT_RO:
+    cmd: python -m src.ssod.build_pe_dataset --labeled_ann_file 
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json 
+      --unlabeled_ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json 
+      ./results/pe_policies/rex_intermediate/detection_results.json 
+      --exclusion_zones ./results/pe_policies/FT/exclusion_zones.json 
+      ./results/pe_policies/rex_intermediate/exclusion_zones.json 
+      --output_ann_file ./results/ssod/pe_datasets/FT_RO/COCO_annotations.json 
+      --output_stats_file ./results/ssod/pe_datasets/FT_RO/build_stats.json
+    deps:
+    - path: ./results/pe_policies/FT/detection_results.json
+      hash: md5
+      md5: 9148b9b9e3f6b041322c9f7b9fa3b4a8
+      size: 7600036
+    - path: ./results/pe_policies/FT/exclusion_zones.json
+      hash: md5
+      md5: f41be062fdddc779688959f9de052882
+      size: 80167172
+    - path: ./results/pe_policies/rex_intermediate/detection_results.json
+      hash: md5
+      md5: 1170cd3f98ef359fa82267c0f3561d64
+      size: 22140100
+    - path: ./results/pe_policies/rex_intermediate/exclusion_zones.json
+      hash: md5
+      md5: e9303775cd06192ceca4c42c5987892d
+      size: 105324332
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: src/ssod/build_pe_dataset.py
+      hash: md5
+      md5: ec8ebcb4255676711ecbb38fc61c7a21
+      size: 16675
+    params:
+      params.yaml:
+        ssod.pe_dataset_drop_empty_unlabeled: true
+    outs:
+    - path: ./results/ssod/pe_datasets/FT_RO/COCO_annotations.json
+      hash: md5
+      md5: f5b63b66cac739a5f2d5ed8fab66b74e
+      size: 150259773
+    - path: ./results/ssod/pe_datasets/FT_RO/build_stats.json
+      hash: md5
+      md5: ab2823ef14fdaa87b6d32057c1fa7767
+      size: 490
+  build_pe_training_data_FT_GD_RO:
+    cmd: python -m src.ssod.build_pe_dataset --labeled_ann_file 
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json 
+      --unlabeled_ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json 
+      ./results/pe_policies/dino_intermediate/detection_results.json 
+      ./results/pe_policies/rex_intermediate/detection_results.json 
+      --exclusion_zones ./results/pe_policies/FT/exclusion_zones.json 
+      ./results/pe_policies/rex_intermediate/exclusion_zones.json 
+      --output_ann_file 
+      ./results/ssod/pe_datasets/FT_GD_RO/COCO_annotations.json 
+      --output_stats_file ./results/ssod/pe_datasets/FT_GD_RO/build_stats.json
+    deps:
+    - path: ./results/pe_policies/FT/detection_results.json
+      hash: md5
+      md5: 9148b9b9e3f6b041322c9f7b9fa3b4a8
+      size: 7600036
+    - path: ./results/pe_policies/FT/exclusion_zones.json
+      hash: md5
+      md5: f41be062fdddc779688959f9de052882
+      size: 80167172
+    - path: ./results/pe_policies/dino_intermediate/detection_results.json
+      hash: md5
+      md5: 3cce9f99f7b2d6bd3efadd26e8af0a9e
+      size: 32811087
+    - path: ./results/pe_policies/rex_intermediate/detection_results.json
+      hash: md5
+      md5: 1170cd3f98ef359fa82267c0f3561d64
+      size: 22140100
+    - path: ./results/pe_policies/rex_intermediate/exclusion_zones.json
+      hash: md5
+      md5: e9303775cd06192ceca4c42c5987892d
+      size: 105324332
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: src/ssod/build_pe_dataset.py
+      hash: md5
+      md5: ec8ebcb4255676711ecbb38fc61c7a21
+      size: 16675
+    params:
+      params.yaml:
+        ssod.pe_dataset_drop_empty_unlabeled: true
+    outs:
+    - path: ./results/ssod/pe_datasets/FT_GD_RO/COCO_annotations.json
+      hash: md5
+      md5: 6192bb34a940971c13769d03035069b1
+      size: 158835741
+    - path: ./results/ssod/pe_datasets/FT_GD_RO/build_stats.json
+      hash: md5
+      md5: a657d9866ba82987574ced3f838db995
+      size: 513
+  build_pe_training_data_FT_GD_noens:
+    cmd: python -m src.ssod.build_pe_dataset --labeled_ann_file 
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json 
+      --unlabeled_ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json 
+      ./results/pe_policies/GD_noens/detection_results.json --exclusion_zones 
+      ./results/pe_policies/FT/exclusion_zones.json --output_ann_file 
+      ./results/ssod/pe_datasets/FT_GD_noens/COCO_annotations.json 
+      --output_stats_file 
+      ./results/ssod/pe_datasets/FT_GD_noens/build_stats.json
+    deps:
+    - path: ./results/pe_policies/FT/detection_results.json
+      hash: md5
+      md5: 9148b9b9e3f6b041322c9f7b9fa3b4a8
+      size: 7600036
+    - path: ./results/pe_policies/FT/exclusion_zones.json
+      hash: md5
+      md5: f41be062fdddc779688959f9de052882
+      size: 80167172
+    - path: ./results/pe_policies/GD_noens/detection_results.json
+      hash: md5
+      md5: 00fe9729b9d2853d049f5e5a67ce9dff
+      size: 5233404
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: src/ssod/build_pe_dataset.py
+      hash: md5
+      md5: ec8ebcb4255676711ecbb38fc61c7a21
+      size: 16675
+    params:
+      params.yaml:
+        ssod.pe_dataset_drop_empty_unlabeled: true
+    outs:
+    - path: ./results/ssod/pe_datasets/FT_GD_noens/COCO_annotations.json
+      hash: md5
+      md5: dbf3fcc54b2a615c425aa0a89d25dba2
+      size: 127969040
+    - path: ./results/ssod/pe_datasets/FT_GD_noens/build_stats.json
+      hash: md5
+      md5: 1b64acf735db2c0f70df776f475e4f9d
+      size: 455
+  build_pe_training_data_FT_RO_noens:
+    cmd: python -m src.ssod.build_pe_dataset --labeled_ann_file 
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json 
+      --unlabeled_ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json 
+      ./results/pe_policies/RO_noens/detection_results.json --exclusion_zones 
+      ./results/pe_policies/FT/exclusion_zones.json 
+      ./results/pe_policies/RO_noens/exclusion_zones.json --output_ann_file 
+      ./results/ssod/pe_datasets/FT_RO_noens/COCO_annotations.json 
+      --output_stats_file 
+      ./results/ssod/pe_datasets/FT_RO_noens/build_stats.json
+    deps:
+    - path: ./results/pe_policies/FT/detection_results.json
+      hash: md5
+      md5: 9148b9b9e3f6b041322c9f7b9fa3b4a8
+      size: 7600036
+    - path: ./results/pe_policies/FT/exclusion_zones.json
+      hash: md5
+      md5: f41be062fdddc779688959f9de052882
+      size: 80167172
+    - path: ./results/pe_policies/RO_noens/detection_results.json
+      hash: md5
+      md5: a90bce10a9465c672ed31f1d5d546188
+      size: 3851350
+    - path: ./results/pe_policies/RO_noens/exclusion_zones.json
+      hash: md5
+      md5: 7bbc840e9c6f5107926e05f0c517e920
+      size: 10626665
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: src/ssod/build_pe_dataset.py
+      hash: md5
+      md5: ec8ebcb4255676711ecbb38fc61c7a21
+      size: 16675
+    params:
+      params.yaml:
+        ssod.pe_dataset_drop_empty_unlabeled: true
+    outs:
+    - path: ./results/ssod/pe_datasets/FT_RO_noens/COCO_annotations.json
+      hash: md5
+      md5: d9d89b3a4369474af59e2182be707316
+      size: 138212129
+    - path: ./results/ssod/pe_datasets/FT_RO_noens/build_stats.json
+      hash: md5
+      md5: 54c290bcd0e7376180015fab923cefec
+      size: 489
+  build_pe_training_data_FT_GD_RO_noens:
+    cmd: python -m src.ssod.build_pe_dataset --labeled_ann_file 
+      ./results/preprocess/tile_images/train_sampled/COCO_annotations.json 
+      --unlabeled_ann_file 
+      ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      --detections ./results/pe_policies/FT/detection_results.json 
+      ./results/pe_policies/GD_noens/detection_results.json 
+      ./results/pe_policies/RO_noens/detection_results.json --exclusion_zones 
+      ./results/pe_policies/FT/exclusion_zones.json 
+      ./results/pe_policies/RO_noens/exclusion_zones.json --output_ann_file 
+      ./results/ssod/pe_datasets/FT_GD_RO_noens/COCO_annotations.json 
+      --output_stats_file 
+      ./results/ssod/pe_datasets/FT_GD_RO_noens/build_stats.json
+    deps:
+    - path: ./results/pe_policies/FT/detection_results.json
+      hash: md5
+      md5: 9148b9b9e3f6b041322c9f7b9fa3b4a8
+      size: 7600036
+    - path: ./results/pe_policies/FT/exclusion_zones.json
+      hash: md5
+      md5: f41be062fdddc779688959f9de052882
+      size: 80167172
+    - path: ./results/pe_policies/GD_noens/detection_results.json
+      hash: md5
+      md5: 00fe9729b9d2853d049f5e5a67ce9dff
+      size: 5233404
+    - path: ./results/pe_policies/RO_noens/detection_results.json
+      hash: md5
+      md5: a90bce10a9465c672ed31f1d5d546188
+      size: 3851350
+    - path: ./results/pe_policies/RO_noens/exclusion_zones.json
+      hash: md5
+      md5: 7bbc840e9c6f5107926e05f0c517e920
+      size: 10626665
+    - path: ./results/preprocess/tile_images/train_sampled/COCO_annotations.json
+      hash: md5
+      md5: cc8145ded1116285b30cca88f3846cfe
+      size: 8372833
+    - path: 
+        ./results/preprocess/tile_images/train_unlabeled_eval/COCO_annotations.json
+      hash: md5
+      md5: 43223c48968644b73cdd3b755ea83bc7
+      size: 77081880
+    - path: src/ssod/build_pe_dataset.py
+      hash: md5
+      md5: ec8ebcb4255676711ecbb38fc61c7a21
+      size: 16675
+    params:
+      params.yaml:
+        ssod.pe_dataset_drop_empty_unlabeled: true
+    outs:
+    - path: ./results/ssod/pe_datasets/FT_GD_RO_noens/COCO_annotations.json
+      hash: md5
+      md5: 1f9d12727de23de1648dd83f7ba596ea
+      size: 147505457
+    - path: ./results/ssod/pe_datasets/FT_GD_RO_noens/build_stats.json
+      hash: md5
+      md5: fbb14df2e86f4476453c8d4413668a80
+      size: 512
+  train_ssod_pe@FT:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images --train_ann_file 
+      ./results/ssod/pe_datasets/FT/COCO_annotations.json --val_img_folder 
+      ./results/preprocess/tile_images/val/images/ --val_ann_file 
+      ./results/preprocess/tile_images/val/COCO_annotations.json --output_dir 
+      ./results/models/ssod_pe/FT/ --seed 42 --num_epochs 100 --batch_size 2 
+      --accumulation_steps 8 --num_workers 8 --learning_rate 0.01 --num_classes 
+      10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 --keep_last_n 5 
+      --eval_every 2 --device cuda --focal_loss 0 --warmup_epochs 1 
+      --log_every_train 100 --log_every_eval 200 --train_empty_fraction 0.0 
+      --augment --exclusion_iou_thresh 0.3
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: ./results/ssod/pe_datasets/FT/COCO_annotations.json
+      hash: md5
+      md5: bc6c8f9928bed49450edd48dcf70d49d
+      size: 118126334
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    - path: src/utils/exclusion_zones.py
+      hash: md5
+      md5: 1a5fd43d64f24bc44ef63bbc5d998446
+      size: 6823
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.device: cuda
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training.seed: 42
+        training_ssod_pe.eval_every: 2
+        training_ssod_pe.focal_loss: 0
+        training_ssod_pe.keep_last_n: 5
+        training_ssod_pe.learning_rate: 0.01
+        training_ssod_pe.log_every_eval: 200
+        training_ssod_pe.log_every_train: 100
+        training_ssod_pe.lr_gamma: 0.1
+        training_ssod_pe.lr_milestones: 50 85
+        training_ssod_pe.num_epochs: 100
+        training_ssod_pe.save_every: 1
+        training_ssod_pe.train_empty_fraction: 0.0
+        training_ssod_pe.warmup_epochs: 1
+    outs:
+    - path: ./results/models/ssod_pe/FT/fasterrcnn_best.pth
+      hash: md5
+      md5: fae0ef58bf89c450cccb2578ba4f42d9
+      size: 341252818
+    - path: ./results/models/ssod_pe/FT/train.log
+      hash: md5
+      md5: c23534b87966fc39609e98a34e9d1a2a
+      size: 257631
+  train_ssod_pe@GD:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images --train_ann_file 
+      ./results/ssod/pe_datasets/GD/COCO_annotations.json --val_img_folder 
+      ./results/preprocess/tile_images/val/images/ --val_ann_file 
+      ./results/preprocess/tile_images/val/COCO_annotations.json --output_dir 
+      ./results/models/ssod_pe/GD/ --seed 42 --num_epochs 100 --batch_size 2 
+      --accumulation_steps 8 --num_workers 8 --learning_rate 0.01 --num_classes 
+      10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 --keep_last_n 5 
+      --eval_every 2 --device cuda --focal_loss 0 --warmup_epochs 1 
+      --log_every_train 100 --log_every_eval 200 --train_empty_fraction 0.0 
+      --augment --exclusion_iou_thresh 0.3
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: ./results/ssod/pe_datasets/GD/COCO_annotations.json
+      hash: md5
+      md5: 896f44563508c0e8edb2ce02fc1085a3
+      size: 12494806
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    - path: src/utils/exclusion_zones.py
+      hash: md5
+      md5: 1a5fd43d64f24bc44ef63bbc5d998446
+      size: 6823
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.device: cuda
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training.seed: 42
+        training_ssod_pe.eval_every: 2
+        training_ssod_pe.focal_loss: 0
+        training_ssod_pe.keep_last_n: 5
+        training_ssod_pe.learning_rate: 0.01
+        training_ssod_pe.log_every_eval: 200
+        training_ssod_pe.log_every_train: 100
+        training_ssod_pe.lr_gamma: 0.1
+        training_ssod_pe.lr_milestones: 50 85
+        training_ssod_pe.num_epochs: 100
+        training_ssod_pe.save_every: 1
+        training_ssod_pe.train_empty_fraction: 0.0
+        training_ssod_pe.warmup_epochs: 1
+    outs:
+    - path: ./results/models/ssod_pe/GD/fasterrcnn_best.pth
+      hash: md5
+      md5: b1dad60c4a91d904648a6626490f4f62
+      size: 341252818
+    - path: ./results/models/ssod_pe/GD/train.log
+      hash: md5
+      md5: 99931c8d4e53144d83e667937f907a76
+      size: 249913
+  train_ssod_pe@RO:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images --train_ann_file 
+      ./results/ssod/pe_datasets/RO/COCO_annotations.json --val_img_folder 
+      ./results/preprocess/tile_images/val/images/ --val_ann_file 
+      ./results/preprocess/tile_images/val/COCO_annotations.json --output_dir 
+      ./results/models/ssod_pe/RO/ --seed 42 --num_epochs 100 --batch_size 2 
+      --accumulation_steps 8 --num_workers 8 --learning_rate 0.01 --num_classes 
+      10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 --keep_last_n 5 
+      --eval_every 2 --device cuda --focal_loss 0 --warmup_epochs 1 
+      --log_every_train 100 --log_every_eval 200 --train_empty_fraction 0.0 
+      --augment --exclusion_iou_thresh 0.3
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: ./results/ssod/pe_datasets/RO/COCO_annotations.json
+      hash: md5
+      md5: 84bc118cd240a2a4e0e7147907723e0b
+      size: 31328633
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    - path: src/utils/exclusion_zones.py
+      hash: md5
+      md5: 1a5fd43d64f24bc44ef63bbc5d998446
+      size: 6823
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.device: cuda
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training.seed: 42
+        training_ssod_pe.eval_every: 2
+        training_ssod_pe.focal_loss: 0
+        training_ssod_pe.keep_last_n: 5
+        training_ssod_pe.learning_rate: 0.01
+        training_ssod_pe.log_every_eval: 200
+        training_ssod_pe.log_every_train: 100
+        training_ssod_pe.lr_gamma: 0.1
+        training_ssod_pe.lr_milestones: 50 85
+        training_ssod_pe.num_epochs: 100
+        training_ssod_pe.save_every: 1
+        training_ssod_pe.train_empty_fraction: 0.0
+        training_ssod_pe.warmup_epochs: 1
+    outs:
+    - path: ./results/models/ssod_pe/RO/fasterrcnn_best.pth
+      hash: md5
+      md5: 21d65800854a26262d7cabf187e98fc4
+      size: 341252818
+    - path: ./results/models/ssod_pe/RO/train.log
+      hash: md5
+      md5: bb9b58577c614f8823c3646636289b98
+      size: 327158
+  train_ssod_pe@FT_GD:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images --train_ann_file 
+      ./results/ssod/pe_datasets/FT_GD/COCO_annotations.json --val_img_folder 
+      ./results/preprocess/tile_images/val/images/ --val_ann_file 
+      ./results/preprocess/tile_images/val/COCO_annotations.json --output_dir 
+      ./results/models/ssod_pe/FT_GD/ --seed 42 --num_epochs 100 --batch_size 2 
+      --accumulation_steps 8 --num_workers 8 --learning_rate 0.01 --num_classes 
+      10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 --keep_last_n 5 
+      --eval_every 2 --device cuda --focal_loss 0 --warmup_epochs 1 
+      --log_every_train 100 --log_every_eval 200 --train_empty_fraction 0.0 
+      --augment --exclusion_iou_thresh 0.3
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: ./results/ssod/pe_datasets/FT_GD/COCO_annotations.json
+      hash: md5
+      md5: 73f1a9dcaba4878672396e8a65adbe55
+      size: 127083263
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    - path: src/utils/exclusion_zones.py
+      hash: md5
+      md5: 1a5fd43d64f24bc44ef63bbc5d998446
+      size: 6823
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.device: cuda
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training.seed: 42
+        training_ssod_pe.eval_every: 2
+        training_ssod_pe.focal_loss: 0
+        training_ssod_pe.keep_last_n: 5
+        training_ssod_pe.learning_rate: 0.01
+        training_ssod_pe.log_every_eval: 200
+        training_ssod_pe.log_every_train: 100
+        training_ssod_pe.lr_gamma: 0.1
+        training_ssod_pe.lr_milestones: 50 85
+        training_ssod_pe.num_epochs: 100
+        training_ssod_pe.save_every: 1
+        training_ssod_pe.train_empty_fraction: 0.0
+        training_ssod_pe.warmup_epochs: 1
+    outs:
+    - path: ./results/models/ssod_pe/FT_GD/fasterrcnn_best.pth
+      hash: md5
+      md5: 4ac1480c8b6137424c025e4cc8cb5f55
+      size: 341252818
+    - path: ./results/models/ssod_pe/FT_GD/train.log
+      hash: md5
+      md5: 9353f3023f6e7a71d49f2c74bd1228b9
+      size: 273088
+  train_ssod_pe@FT_RO:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images --train_ann_file 
+      ./results/ssod/pe_datasets/FT_RO/COCO_annotations.json --val_img_folder 
+      ./results/preprocess/tile_images/val/images/ --val_ann_file 
+      ./results/preprocess/tile_images/val/COCO_annotations.json --output_dir 
+      ./results/models/ssod_pe/FT_RO/ --seed 42 --num_epochs 100 --batch_size 2 
+      --accumulation_steps 8 --num_workers 8 --learning_rate 0.01 --num_classes 
+      10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 --keep_last_n 5 
+      --eval_every 2 --device cuda --focal_loss 0 --warmup_epochs 1 
+      --log_every_train 100 --log_every_eval 200 --train_empty_fraction 0.0 
+      --augment --exclusion_iou_thresh 0.3
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: ./results/ssod/pe_datasets/FT_RO/COCO_annotations.json
+      hash: md5
+      md5: f5b63b66cac739a5f2d5ed8fab66b74e
+      size: 150259773
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    - path: src/utils/exclusion_zones.py
+      hash: md5
+      md5: 1a5fd43d64f24bc44ef63bbc5d998446
+      size: 6823
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.device: cuda
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training.seed: 42
+        training_ssod_pe.eval_every: 2
+        training_ssod_pe.focal_loss: 0
+        training_ssod_pe.keep_last_n: 5
+        training_ssod_pe.learning_rate: 0.01
+        training_ssod_pe.log_every_eval: 200
+        training_ssod_pe.log_every_train: 100
+        training_ssod_pe.lr_gamma: 0.1
+        training_ssod_pe.lr_milestones: 50 85
+        training_ssod_pe.num_epochs: 100
+        training_ssod_pe.save_every: 1
+        training_ssod_pe.train_empty_fraction: 0.0
+        training_ssod_pe.warmup_epochs: 1
+    outs:
+    - path: ./results/models/ssod_pe/FT_RO/fasterrcnn_best.pth
+      hash: md5
+      md5: af31ea9ddd1010bb7b0afa9e201d67cd
+      size: 341252818
+    - path: ./results/models/ssod_pe/FT_RO/train.log
+      hash: md5
+      md5: af1c0d142e4b9a206f863df7a007b036
+      size: 265489
+  train_ssod_pe@FT_GD_RO:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images --train_ann_file 
+      ./results/ssod/pe_datasets/FT_GD_RO/COCO_annotations.json --val_img_folder
+      ./results/preprocess/tile_images/val/images/ --val_ann_file 
+      ./results/preprocess/tile_images/val/COCO_annotations.json --output_dir 
+      ./results/models/ssod_pe/FT_GD_RO/ --seed 42 --num_epochs 100 --batch_size
+      2 --accumulation_steps 8 --num_workers 8 --learning_rate 0.01 
+      --num_classes 10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 
+      --keep_last_n 5 --eval_every 2 --device cuda --focal_loss 0 
+      --warmup_epochs 1 --log_every_train 100 --log_every_eval 200 
+      --train_empty_fraction 0.0 --augment --exclusion_iou_thresh 0.3
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: ./results/ssod/pe_datasets/FT_GD_RO/COCO_annotations.json
+      hash: md5
+      md5: 6192bb34a940971c13769d03035069b1
+      size: 158835741
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    - path: src/utils/exclusion_zones.py
+      hash: md5
+      md5: 1a5fd43d64f24bc44ef63bbc5d998446
+      size: 6823
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.device: cuda
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training.seed: 42
+        training_ssod_pe.eval_every: 2
+        training_ssod_pe.focal_loss: 0
+        training_ssod_pe.keep_last_n: 5
+        training_ssod_pe.learning_rate: 0.01
+        training_ssod_pe.log_every_eval: 200
+        training_ssod_pe.log_every_train: 100
+        training_ssod_pe.lr_gamma: 0.1
+        training_ssod_pe.lr_milestones: 50 85
+        training_ssod_pe.num_epochs: 100
+        training_ssod_pe.save_every: 1
+        training_ssod_pe.train_empty_fraction: 0.0
+        training_ssod_pe.warmup_epochs: 1
+    outs:
+    - path: ./results/models/ssod_pe/FT_GD_RO/fasterrcnn_best.pth
+      hash: md5
+      md5: 6afbb86eaa5cfbcc06865b8d24468992
+      size: 341252818
+    - path: ./results/models/ssod_pe/FT_GD_RO/train.log
+      hash: md5
+      md5: 5f60a9365e62a688ee572f81a0c73ea0
+      size: 280507
+  train_ssod_pe@FT_GD_noens:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images --train_ann_file 
+      ./results/ssod/pe_datasets/FT_GD_noens/COCO_annotations.json 
+      --val_img_folder ./results/preprocess/tile_images/val/images/ 
+      --val_ann_file ./results/preprocess/tile_images/val/COCO_annotations.json 
+      --output_dir ./results/models/ssod_pe/FT_GD_noens/ --seed 42 --num_epochs 
+      100 --batch_size 2 --accumulation_steps 8 --num_workers 8 --learning_rate 
+      0.01 --num_classes 10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 
+      --keep_last_n 5 --eval_every 2 --device cuda --focal_loss 0 
+      --warmup_epochs 1 --log_every_train 100 --log_every_eval 200 
+      --train_empty_fraction 0.0 --augment --exclusion_iou_thresh 0.3
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: ./results/ssod/pe_datasets/FT_GD_noens/COCO_annotations.json
+      hash: md5
+      md5: dbf3fcc54b2a615c425aa0a89d25dba2
+      size: 127969040
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    - path: src/utils/exclusion_zones.py
+      hash: md5
+      md5: 1a5fd43d64f24bc44ef63bbc5d998446
+      size: 6823
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.device: cuda
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training.seed: 42
+        training_ssod_pe.eval_every: 2
+        training_ssod_pe.focal_loss: 0
+        training_ssod_pe.keep_last_n: 5
+        training_ssod_pe.learning_rate: 0.01
+        training_ssod_pe.log_every_eval: 200
+        training_ssod_pe.log_every_train: 100
+        training_ssod_pe.lr_gamma: 0.1
+        training_ssod_pe.lr_milestones: 50 85
+        training_ssod_pe.num_epochs: 100
+        training_ssod_pe.save_every: 1
+        training_ssod_pe.train_empty_fraction: 0.0
+        training_ssod_pe.warmup_epochs: 1
+    outs:
+    - path: ./results/models/ssod_pe/FT_GD_noens/fasterrcnn_best.pth
+      hash: md5
+      md5: 597b870a7596f33aea50753673e41b1b
+      size: 341252818
+    - path: ./results/models/ssod_pe/FT_GD_noens/train.log
+      hash: md5
+      md5: 5f5e76239b89c0741cf45d016b5a5389
+      size: 288482
+  train_ssod_pe@FT_RO_noens:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images --train_ann_file 
+      ./results/ssod/pe_datasets/FT_RO_noens/COCO_annotations.json 
+      --val_img_folder ./results/preprocess/tile_images/val/images/ 
+      --val_ann_file ./results/preprocess/tile_images/val/COCO_annotations.json 
+      --output_dir ./results/models/ssod_pe/FT_RO_noens/ --seed 42 --num_epochs 
+      100 --batch_size 2 --accumulation_steps 8 --num_workers 8 --learning_rate 
+      0.01 --num_classes 10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 
+      --keep_last_n 5 --eval_every 2 --device cuda --focal_loss 0 
+      --warmup_epochs 1 --log_every_train 100 --log_every_eval 200 
+      --train_empty_fraction 0.0 --augment --exclusion_iou_thresh 0.3
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: ./results/ssod/pe_datasets/FT_RO_noens/COCO_annotations.json
+      hash: md5
+      md5: d9d89b3a4369474af59e2182be707316
+      size: 138212129
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    - path: src/utils/exclusion_zones.py
+      hash: md5
+      md5: 1a5fd43d64f24bc44ef63bbc5d998446
+      size: 6823
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.device: cuda
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training.seed: 42
+        training_ssod_pe.eval_every: 2
+        training_ssod_pe.focal_loss: 0
+        training_ssod_pe.keep_last_n: 5
+        training_ssod_pe.learning_rate: 0.01
+        training_ssod_pe.log_every_eval: 200
+        training_ssod_pe.log_every_train: 100
+        training_ssod_pe.lr_gamma: 0.1
+        training_ssod_pe.lr_milestones: 50 85
+        training_ssod_pe.num_epochs: 100
+        training_ssod_pe.save_every: 1
+        training_ssod_pe.train_empty_fraction: 0.0
+        training_ssod_pe.warmup_epochs: 1
+    outs:
+    - path: ./results/models/ssod_pe/FT_RO_noens/fasterrcnn_best.pth
+      hash: md5
+      md5: a03b2d7cef4d07bc96b87c2311882b14
+      size: 341252818
+    - path: ./results/models/ssod_pe/FT_RO_noens/train.log
+      hash: md5
+      md5: b0fd3bd5714170e7a560c44e6a5e0a3f
+      size: 265406
+  train_ssod_pe@FT_GD_RO_noens:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images --train_ann_file 
+      ./results/ssod/pe_datasets/FT_GD_RO_noens/COCO_annotations.json 
+      --val_img_folder ./results/preprocess/tile_images/val/images/ 
+      --val_ann_file ./results/preprocess/tile_images/val/COCO_annotations.json 
+      --output_dir ./results/models/ssod_pe/FT_GD_RO_noens/ --seed 42 
+      --num_epochs 100 --batch_size 2 --accumulation_steps 8 --num_workers 8 
+      --learning_rate 0.01 --num_classes 10 --lr_milestones 50 85 --lr_gamma 0.1
+      --save_every 1 --keep_last_n 5 --eval_every 2 --device cuda --focal_loss 0
+      --warmup_epochs 1 --log_every_train 100 --log_every_eval 200 
+      --train_empty_fraction 0.0 --augment --exclusion_iou_thresh 0.3
+    deps:
+    - path: ./results/preprocess/tile_images/train_sampled/images/
+      hash: md5
+      md5: a83a2c0503a049d5f75394cd8d380458.dir
+      size: 1514499838
+      nfiles: 1106
+    - path: ./results/preprocess/tile_images/train_unlabeled_eval/images/
+      hash: md5
+      md5: d281e151b3b044facfadf6227e44859d.dir
+      size: 13518091414
+      nfiles: 9918
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: ./results/ssod/pe_datasets/FT_GD_RO_noens/COCO_annotations.json
+      hash: md5
+      md5: 1f9d12727de23de1648dd83f7ba596ea
+      size: 147505457
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    - path: src/utils/exclusion_zones.py
+      hash: md5
+      md5: 1a5fd43d64f24bc44ef63bbc5d998446
+      size: 6823
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.device: cuda
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training.seed: 42
+        training_ssod_pe.eval_every: 2
+        training_ssod_pe.focal_loss: 0
+        training_ssod_pe.keep_last_n: 5
+        training_ssod_pe.learning_rate: 0.01
+        training_ssod_pe.log_every_eval: 200
+        training_ssod_pe.log_every_train: 100
+        training_ssod_pe.lr_gamma: 0.1
+        training_ssod_pe.lr_milestones: 50 85
+        training_ssod_pe.num_epochs: 100
+        training_ssod_pe.save_every: 1
+        training_ssod_pe.train_empty_fraction: 0.0
+        training_ssod_pe.warmup_epochs: 1
+    outs:
+    - path: ./results/models/ssod_pe/FT_GD_RO_noens/fasterrcnn_best.pth
+      hash: md5
+      md5: 3f4bf1dc39152f6fb33acbc3a5e488a9
+      size: 341252818
+    - path: ./results/models/ssod_pe/FT_GD_RO_noens/train.log
+      hash: md5
+      md5: b974168bd1af3c20706405a686bb77af
+      size: 288581
+  evaluate_ssod_pe@FT:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/ssod_pe/FT/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_ssod_pe/FT/ --batch_size 4
+    deps:
+    - path: ./results/models/ssod_pe/FT/fasterrcnn_best.pth
+      hash: md5
+      md5: fae0ef58bf89c450cccb2578ba4f42d9
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_ssod_pe/FT/metrics.json
+      hash: md5
+      md5: 62052d0b310b3e7bfea10d79d4747fc0
+      size: 249
+  evaluate_ssod_pe@GD:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/ssod_pe/GD/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_ssod_pe/GD/ --batch_size 4
+    deps:
+    - path: ./results/models/ssod_pe/GD/fasterrcnn_best.pth
+      hash: md5
+      md5: b1dad60c4a91d904648a6626490f4f62
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_ssod_pe/GD/metrics.json
+      hash: md5
+      md5: fdef7e106fe5a6dd487ae2f070381bf6
+      size: 249
+  evaluate_ssod_pe@RO:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/ssod_pe/RO/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_ssod_pe/RO/ --batch_size 4
+    deps:
+    - path: ./results/models/ssod_pe/RO/fasterrcnn_best.pth
+      hash: md5
+      md5: 21d65800854a26262d7cabf187e98fc4
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_ssod_pe/RO/metrics.json
+      hash: md5
+      md5: cfab0fa3d9bec72b4f47e887ac50dab1
+      size: 249
+  evaluate_ssod_pe@FT_GD:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/ssod_pe/FT_GD/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_ssod_pe/FT_GD/ --batch_size 4
+    deps:
+    - path: ./results/models/ssod_pe/FT_GD/fasterrcnn_best.pth
+      hash: md5
+      md5: 4ac1480c8b6137424c025e4cc8cb5f55
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_ssod_pe/FT_GD/metrics.json
+      hash: md5
+      md5: 2048e530be9e17aea3c46a1a9d42a4f6
+      size: 249
+  evaluate_ssod_pe@FT_RO:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/ssod_pe/FT_RO/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_ssod_pe/FT_RO/ --batch_size 4
+    deps:
+    - path: ./results/models/ssod_pe/FT_RO/fasterrcnn_best.pth
+      hash: md5
+      md5: af31ea9ddd1010bb7b0afa9e201d67cd
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_ssod_pe/FT_RO/metrics.json
+      hash: md5
+      md5: 88c36f84ebfe93d99208c3b190be177f
+      size: 248
+  evaluate_ssod_pe@FT_GD_RO:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/ssod_pe/FT_GD_RO/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_ssod_pe/FT_GD_RO/ --batch_size 4
+    deps:
+    - path: ./results/models/ssod_pe/FT_GD_RO/fasterrcnn_best.pth
+      hash: md5
+      md5: 6afbb86eaa5cfbcc06865b8d24468992
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_ssod_pe/FT_GD_RO/metrics.json
+      hash: md5
+      md5: 3887449ba2dbbd0a83cf4870257003ae
+      size: 248
+  evaluate_ssod_pe@FT_GD_noens:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/ssod_pe/FT_GD_noens/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_ssod_pe/FT_GD_noens/ --batch_size
+      4
+    deps:
+    - path: ./results/models/ssod_pe/FT_GD_noens/fasterrcnn_best.pth
+      hash: md5
+      md5: 597b870a7596f33aea50753673e41b1b
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_ssod_pe/FT_GD_noens/metrics.json
+      hash: md5
+      md5: a32a0f0222ed8724769cffd04af81365
+      size: 248
+  evaluate_ssod_pe@FT_RO_noens:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/ssod_pe/FT_RO_noens/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_ssod_pe/FT_RO_noens/ --batch_size
+      4
+    deps:
+    - path: ./results/models/ssod_pe/FT_RO_noens/fasterrcnn_best.pth
+      hash: md5
+      md5: a03b2d7cef4d07bc96b87c2311882b14
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_ssod_pe/FT_RO_noens/metrics.json
+      hash: md5
+      md5: 3d507b74d5a6a8439923d1e8571afb52
+      size: 249
+  evaluate_ssod_pe@FT_GD_RO_noens:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/ssod_pe/FT_GD_RO_noens/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_ssod_pe/FT_GD_RO_noens/ 
+      --batch_size 4
+    deps:
+    - path: ./results/models/ssod_pe/FT_GD_RO_noens/fasterrcnn_best.pth
+      hash: md5
+      md5: 3f4bf1dc39152f6fb33acbc3a5e488a9
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_ssod_pe/FT_GD_RO_noens/metrics.json
+      hash: md5
+      md5: 8c9ec6a99a0748319bce14358031e49a
+      size: 246
+  generate_pe_comparison_table:
+    cmd: python -m src.ssod.generate_pe_comparison_table --baseline_metrics 
+      ./results/inference_test_ssod_baseline/metrics.json --pe_metrics 
+      FT:./results/inference_test_ssod_pe/FT/metrics.json 
+      GD:./results/inference_test_ssod_pe/GD/metrics.json 
+      RO:./results/inference_test_ssod_pe/RO/metrics.json 
+      FT_GD:./results/inference_test_ssod_pe/FT_GD/metrics.json 
+      FT_RO:./results/inference_test_ssod_pe/FT_RO/metrics.json 
+      FT_GD_RO:./results/inference_test_ssod_pe/FT_GD_RO/metrics.json 
+      FT_GD_noens:./results/inference_test_ssod_pe/FT_GD_noens/metrics.json 
+      FT_RO_noens:./results/inference_test_ssod_pe/FT_RO_noens/metrics.json 
+      FT_GD_RO_noens:./results/inference_test_ssod_pe/FT_GD_RO_noens/metrics.json
+      --output_csv ./results/ssod/comparison_table.csv --output_chart 
+      ./docs/charts_ssod_pe/comparison_bar_chart.png
+    deps:
+    - path: ./results/inference_test_ssod_baseline/metrics.json
+      hash: md5
+      md5: edb80421ed9d2920121bba4c101667aa
+      size: 249
+    - path: ./results/inference_test_ssod_pe/FT/metrics.json
+      hash: md5
+      md5: 62052d0b310b3e7bfea10d79d4747fc0
+      size: 249
+    - path: ./results/inference_test_ssod_pe/FT_GD/metrics.json
+      hash: md5
+      md5: 2048e530be9e17aea3c46a1a9d42a4f6
+      size: 249
+    - path: ./results/inference_test_ssod_pe/FT_GD_RO/metrics.json
+      hash: md5
+      md5: 3887449ba2dbbd0a83cf4870257003ae
+      size: 248
+    - path: ./results/inference_test_ssod_pe/FT_GD_RO_noens/metrics.json
+      hash: md5
+      md5: 8c9ec6a99a0748319bce14358031e49a
+      size: 246
+    - path: ./results/inference_test_ssod_pe/FT_GD_noens/metrics.json
+      hash: md5
+      md5: a32a0f0222ed8724769cffd04af81365
+      size: 248
+    - path: ./results/inference_test_ssod_pe/FT_RO/metrics.json
+      hash: md5
+      md5: 88c36f84ebfe93d99208c3b190be177f
+      size: 248
+    - path: ./results/inference_test_ssod_pe/FT_RO_noens/metrics.json
+      hash: md5
+      md5: 3d507b74d5a6a8439923d1e8571afb52
+      size: 249
+    - path: ./results/inference_test_ssod_pe/GD/metrics.json
+      hash: md5
+      md5: fdef7e106fe5a6dd487ae2f070381bf6
+      size: 249
+    - path: ./results/inference_test_ssod_pe/RO/metrics.json
+      hash: md5
+      md5: cfab0fa3d9bec72b4f47e887ac50dab1
+      size: 249
+    - path: src/ssod/generate_pe_comparison_table.py
+      hash: md5
+      md5: ea81378f1f0389ad4073c829123e526b
+      size: 5499
+    outs:
+    - path: ./docs/charts_ssod_pe/comparison_bar_chart.png
+      hash: md5
+      md5: fdf85c51f18242175242cc2f0316e43c
+      size: 156317
+    - path: ./results/ssod/comparison_table.csv
+      hash: md5
+      md5: 90685427492cfe60a815b7a2ab040562
+      size: 401
+  preprocess_sample_curve:
+    cmd: python -m src.preprocessing.sample_coco_stratified 
+      ./results/preprocess/split/xview_train.json 
+      ./results/preprocess/split/curve/xview_curve.json 
+      ./results/preprocess/split/curve/xview_curve_unlabeled.json --ratio 0.1 
+      --seed 1623175845 --iters 3000 --nested_ratios 0.10,0.20,0.30
+    deps:
+    - path: ./results/preprocess/split/xview_train.json
+      hash: md5
+      md5: 0abf3eff66d3797ae1761b96521807de
+      size: 48863257
+    - path: src/preprocessing/sample_coco_stratified.py
+      hash: md5
+      md5: e83910c5400115eefd1ea349cc802eb8
+      size: 11425
+    params:
+      params.yaml:
+        preprocessing.sample_iters: 3000
+        preprocessing.sample_seed: 1623175845
+        preprocessing.train_sample_ratio: 0.1
+        supervised_curve.ratios: 0.10,0.20,0.30
+    outs:
+    - path: ./results/preprocess/split/curve/xview_curve_20.json
+      hash: md5
+      md5: 760c3406e12489de591e6b1cdf27bb86
+      size: 9749324
+    - path: ./results/preprocess/split/curve/xview_curve_30.json
+      hash: md5
+      md5: 4fe855bffef1a7cde59207ceb219f528
+      size: 14656479
+  preprocess_tile_curve@20:
+    cmd: python -m src.preprocessing.coco_tiling xView/train_images 
+      ./results/preprocess/split/curve/xview_curve_20.json 
+      ./results/preprocess/tile_images/curve_20 --tile_width=700 
+      --tile_height=700 --min_tile_width=300 --min_tile_height=300 
+      --min_visibility=0.3 --report_file 
+      docs/dataset_reports/tile_filter_curve_20_report.json
+    deps:
+    - path: ./results/preprocess/split/curve/xview_curve_20.json
+      hash: md5
+      md5: 760c3406e12489de591e6b1cdf27bb86
+      size: 9749324
+    - path: src/preprocessing/coco_tiling.py
+      hash: md5
+      md5: 7fd243ad7ca57ce8d678cd3930bee23e
+      size: 12537
+    - path: xView/train_images
+      hash: md5
+      md5: 36d85084ea1ece675a9de5b4e73c73cd.dir
+      size: 24678282984
+      nfiles: 849
+    params:
+      params.yaml:
+        preprocessing.min_tile_height: 300
+        preprocessing.min_tile_width: 300
+        preprocessing.min_visibility: 0.3
+        preprocessing.tile_height: 700
+        preprocessing.tile_width: 700
+    outs:
+    - path: ./results/preprocess/tile_images/curve_20/COCO_annotations.json
+      hash: md5
+      md5: a25f633b5426d0124f0c566d9e19dab3
+      size: 16906853
+    - path: ./results/preprocess/tile_images/curve_20/images/
+      hash: md5
+      md5: 634d1a2d193335350e4785f7dbcf9cc8.dir
+      size: 3036395918
+      nfiles: 2215
+  preprocess_tile_curve@30:
+    cmd: python -m src.preprocessing.coco_tiling xView/train_images 
+      ./results/preprocess/split/curve/xview_curve_30.json 
+      ./results/preprocess/tile_images/curve_30 --tile_width=700 
+      --tile_height=700 --min_tile_width=300 --min_tile_height=300 
+      --min_visibility=0.3 --report_file 
+      docs/dataset_reports/tile_filter_curve_30_report.json
+    deps:
+    - path: ./results/preprocess/split/curve/xview_curve_30.json
+      hash: md5
+      md5: 4fe855bffef1a7cde59207ceb219f528
+      size: 14656479
+    - path: src/preprocessing/coco_tiling.py
+      hash: md5
+      md5: 7fd243ad7ca57ce8d678cd3930bee23e
+      size: 12537
+    - path: xView/train_images
+      hash: md5
+      md5: 36d85084ea1ece675a9de5b4e73c73cd.dir
+      size: 24678282984
+      nfiles: 849
+    params:
+      params.yaml:
+        preprocessing.min_tile_height: 300
+        preprocessing.min_tile_width: 300
+        preprocessing.min_visibility: 0.3
+        preprocessing.tile_height: 700
+        preprocessing.tile_width: 700
+    outs:
+    - path: ./results/preprocess/tile_images/curve_30/COCO_annotations.json
+      hash: md5
+      md5: 43eee7cab9792cf98fbef18251205b6e
+      size: 25595004
+    - path: ./results/preprocess/tile_images/curve_30/images/
+      hash: md5
+      md5: 4f9487e94bb4ef3e1d80c05279395f15.dir
+      size: 4546349572
+      nfiles: 3306
+  train_supervised_curve@20:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images/curve_20/images/ --train_ann_file 
+      ./results/preprocess/tile_images/curve_20/COCO_annotations.json 
+      --val_img_folder ./results/preprocess/tile_images/val/images/ 
+      --val_ann_file ./results/preprocess/tile_images/val/COCO_annotations.json 
+      --output_dir ./results/models/supervised_curve/r20/ --seed 42 --num_epochs
+      100 --batch_size 2 --accumulation_steps 8 --num_workers 8 --learning_rate 
+      0.01 --num_classes 10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 
+      --keep_last_n 5 --eval_every 2 --device cuda --focal_loss 0 
+      --warmup_epochs 1 --log_every_train 100 --log_every_eval 200 
+      --train_empty_fraction 0.0 --augment
+    deps:
+    - path: ./results/preprocess/tile_images/curve_20/COCO_annotations.json
+      hash: md5
+      md5: a25f633b5426d0124f0c566d9e19dab3
+      size: 16906853
+    - path: ./results/preprocess/tile_images/curve_20/images/
+      hash: md5
+      md5: 634d1a2d193335350e4785f7dbcf9cc8.dir
+      size: 3036395918
+      nfiles: 2215
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training.seed: 42
+        training_ssod_baseline.focal_loss: 0
+        training_ssod_baseline.learning_rate: 0.01
+        training_ssod_baseline.lr_gamma: 0.1
+        training_ssod_baseline.lr_milestones: 50 85
+        training_ssod_baseline.num_epochs: 100
+        training_ssod_baseline.train_empty_fraction: 0.0
+        training_ssod_baseline.warmup_epochs: 1
+    outs:
+    - path: ./results/models/supervised_curve/r20/fasterrcnn_best.pth
+      hash: md5
+      md5: df91f89cce67ad4de2dd437832b83380
+      size: 341252818
+    - path: ./results/models/supervised_curve/r20/train.log
+      hash: md5
+      md5: c544f1438d907369cfd37a11953e20f1
+      size: 88956
+  train_supervised_curve@30:
+    cmd: python -m src.training.train --config_file 
+      configs/models/fasterrcnn_pretrained.py --train_img_folder 
+      ./results/preprocess/tile_images/curve_30/images/ --train_ann_file 
+      ./results/preprocess/tile_images/curve_30/COCO_annotations.json 
+      --val_img_folder ./results/preprocess/tile_images/val/images/ 
+      --val_ann_file ./results/preprocess/tile_images/val/COCO_annotations.json 
+      --output_dir ./results/models/supervised_curve/r30/ --seed 42 --num_epochs
+      100 --batch_size 2 --accumulation_steps 8 --num_workers 8 --learning_rate 
+      0.01 --num_classes 10 --lr_milestones 50 85 --lr_gamma 0.1 --save_every 1 
+      --keep_last_n 5 --eval_every 2 --device cuda --focal_loss 0 
+      --warmup_epochs 1 --log_every_train 100 --log_every_eval 200 
+      --train_empty_fraction 0.0 --augment
+    deps:
+    - path: ./results/preprocess/tile_images/curve_30/COCO_annotations.json
+      hash: md5
+      md5: 43eee7cab9792cf98fbef18251205b6e
+      size: 25595004
+    - path: ./results/preprocess/tile_images/curve_30/images/
+      hash: md5
+      md5: 4f9487e94bb4ef3e1d80c05279395f15.dir
+      size: 4546349572
+      nfiles: 3306
+    - path: ./results/preprocess/tile_images/val/COCO_annotations.json
+      hash: md5
+      md5: e35263e468bf715a48e57dfb9e5babb2
+      size: 12197637
+    - path: ./results/preprocess/tile_images/val/images/
+      hash: md5
+      md5: 9b2e13fe99ecea2282fac9f9fe88853b.dir
+      size: 3652615194
+      nfiles: 2653
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/training/train.py
+      hash: md5
+      md5: b10a7262742985fb1529b7e6a0ae9538
+      size: 32924
+    params:
+      params.yaml:
+        training.accumulation_steps: 8
+        training.batch_size: 2
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+        training.num_classes: 10
+        training.num_workers: 8
+        training.seed: 42
+        training_ssod_baseline.focal_loss: 0
+        training_ssod_baseline.learning_rate: 0.01
+        training_ssod_baseline.lr_gamma: 0.1
+        training_ssod_baseline.lr_milestones: 50 85
+        training_ssod_baseline.num_epochs: 100
+        training_ssod_baseline.train_empty_fraction: 0.0
+        training_ssod_baseline.warmup_epochs: 1
+    outs:
+    - path: ./results/models/supervised_curve/r30/fasterrcnn_best.pth
+      hash: md5
+      md5: 64e47f634497c063747775a1e81032ce
+      size: 341252818
+    - path: ./results/models/supervised_curve/r30/train.log
+      hash: md5
+      md5: 99d6befcd05707fa86a866efe44214e3
+      size: 112812
+  evaluate_supervised_curve@20:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/supervised_curve/r20/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_supervised_curve/r20/ 
+      --batch_size 4
+    deps:
+    - path: ./results/models/supervised_curve/r20/fasterrcnn_best.pth
+      hash: md5
+      md5: df91f89cce67ad4de2dd437832b83380
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_supervised_curve/r20/metrics.json
+      hash: md5
+      md5: cc33a3542f6c498d5298a0f94d5051f3
+      size: 247
+  evaluate_supervised_curve@30:
+    cmd: python -m src.inference.torvis_detection_inference --model_config_file 
+      configs/models/fasterrcnn_pretrained.py --model_checkpoint 
+      ./results/models/supervised_curve/r30/fasterrcnn_best.pth --img_dir 
+      ./results/preprocess/tile_images/test/images/ --ann_file 
+      ./results/preprocess/tile_images/test/COCO_annotations.json 
+      --output_folder ./results/inference_test_supervised_curve/r30/ 
+      --batch_size 4
+    deps:
+    - path: ./results/models/supervised_curve/r30/fasterrcnn_best.pth
+      hash: md5
+      md5: 64e47f634497c063747775a1e81032ce
+      size: 341252818
+    - path: ./results/preprocess/tile_images/test/COCO_annotations.json
+      hash: md5
+      md5: 95aebde080d46d078bfaa03e5f5e9e60
+      size: 24361005
+    - path: ./results/preprocess/tile_images/test/images/
+      hash: md5
+      md5: 84f1c78669eece640003ddf7b2decb1b.dir
+      size: 5128781904
+      nfiles: 3771
+    - path: configs/models/fasterrcnn_pretrained.py
+      hash: md5
+      md5: 8480258b5e7cd43028675e7f3526c8e1
+      size: 2139
+    - path: src/inference/torvis_detection_inference.py
+      hash: md5
+      md5: 55a3fc973fa93dad3cdd7f2848934c54
+      size: 6668
+    params:
+      params.yaml:
+        evaluation.batch_size: 4
+        training.model_config: configs/models/fasterrcnn_pretrained.py
+    outs:
+    - path: ./results/inference_test_supervised_curve/r30/metrics.json
+      hash: md5
+      md5: 0045abd79e5f711e78ec3edf24c4b586
+      size: 248
